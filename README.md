@@ -4,6 +4,8 @@
 
 > _Sam's hosting **Friendsgiving** Saturday at 6pm. Can someone bring **stuffing** 🍞, **a pie** 🥧 and **ice** 🧊?_
 
+**Live:** [can-someone-bring.vercel.app](https://can-someone-bring.vercel.app) · **Try the guest view:** [demo sheet](https://can-someone-bring.vercel.app/s/demo) (best on your phone)
+
 <p align="center">
   <img src="docs/guest.jpg" width="250" alt="Guest signup page: a sentence header listing what's still needed, a big '11 still needed' count, and colorful stacked category cards" />
   &nbsp;
