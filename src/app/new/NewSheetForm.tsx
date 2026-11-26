@@ -5,6 +5,7 @@ import { createSheet, type NewSheetState } from "./actions";
 import { TEMPLATES } from "@/lib/templates";
 import { ui } from "@/components/ui";
 import Sticker from "@/components/Sticker";
+import { PlusIcon } from "@/components/icons";
 
 /** Next Saturday at 7pm, in the browser's local time, formatted for datetime-local. */
 function defaultStart() {
@@ -47,7 +48,7 @@ export default function NewSheetForm({ defaultName }: { defaultName: string }) {
   return (
     <form action={action} className="space-y-7">
       <fieldset>
-        <legend className="mb-3 text-[20px] font-extrabold tracking-tight">What kind of party?</legend>
+        <legend className="mb-3 font-display tracking-[-0.015em] text-[24px]">What kind of party?</legend>
         <div className="grid grid-cols-2 gap-2">
           {TEMPLATES.map((t) => {
             const active = t.key === templateKey;
@@ -57,14 +58,14 @@ export default function NewSheetForm({ defaultName }: { defaultName: string }) {
                 key={t.key}
                 onClick={() => pick(t.key)}
                 aria-pressed={active}
-                className={`flex rounded-3xl p-4 text-left ring-2 transition ${
-                  active ? "bg-cat-yellow text-cat-ink ring-cat-ink" : "bg-surface ring-transparent"
+                className={`flex rounded-[20px] border p-4 text-left transition ${
+                  active ? "border-cat-ink bg-cat-yellow text-cat-ink" : "border-hair bg-surface"
                 } ${t.key === "blank" ? "col-span-2 flex-row items-center gap-3" : "min-h-[116px] flex-col items-start"}`}
               >
                 <Sticker name={t.sticker} size={t.key === "blank" ? 32 : 40} />
                 <span className={t.key === "blank" ? "" : "mt-auto"}>
-                  <span className="block text-[16px] leading-tight font-extrabold">{t.name}</span>
-                  <span className="block text-[13px] leading-snug opacity-70">{t.blurb}</span>
+                  <span className="block font-display text-[18px] leading-tight">{t.name}</span>
+                  <span className="block text-[13px] leading-snug opacity-65">{t.blurb}</span>
                 </span>
               </button>
             );
@@ -74,7 +75,7 @@ export default function NewSheetForm({ defaultName }: { defaultName: string }) {
       </fieldset>
 
       <fieldset className="space-y-4">
-        <legend className="mb-3 text-[20px] font-extrabold tracking-tight">The details</legend>
+        <legend className="mb-3 font-display tracking-[-0.015em] text-[24px]">The details</legend>
         <label className="block">
           <span className={ui.label}>Party name</span>
           <input
@@ -142,13 +143,14 @@ export default function NewSheetForm({ defaultName }: { defaultName: string }) {
             </label>
           </>
         ) : (
-          <button type="button" onClick={() => setMore(true)} className="h-11 text-sm font-semibold text-accent">
-            + Add a location or note
+          <button type="button" onClick={() => setMore(true)} className="flex h-11 items-center gap-1.5 text-[14px] text-accent">
+            <PlusIcon size={16} />
+            Add a location or note
           </button>
         )}
       </fieldset>
 
-      {state.error && <p className="rounded-2xl bg-cat-yellow px-4 py-3 text-sm font-semibold text-cat-ink">{state.error}</p>}
+      {state.error && <p className="border-l-2 border-accent pl-3 text-[14px]">{state.error}</p>}
 
       <button className={`${ui.pill} w-full`} disabled={pending || !timeZone}>
         {pending ? "Creating…" : "Next: the list"}

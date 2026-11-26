@@ -23,7 +23,7 @@ export default function ConfirmSignIn({ params }: { params: Params }) {
     <form ref={form} action={confirmSignIn} className="text-center">
       {Object.entries(params).map(([k, v]) => v && <input key={k} type="hidden" name={k} value={v} />)}
       <Sticker name="party" size={72} className="mx-auto" />
-      <h1 className="mt-4 text-[30px] leading-tight font-extrabold tracking-[-0.03em]">Signing you in…</h1>
+      <h1 className="mt-4 font-display tracking-[-0.015em] text-[30px] leading-tight">Signing you in…</h1>
       <p className="mt-2 text-muted">One sec.</p>
       <ContinueButton />
     </form>

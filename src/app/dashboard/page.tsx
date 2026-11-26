@@ -3,11 +3,11 @@ import { listHostSheets } from "@/lib/sheets";
 import { shortDateTime } from "@/lib/dates";
 import { CATEGORY_COLORS } from "@/lib/types";
 import { HostNav, ui } from "@/components/ui";
+import { CARD_BG } from "@/lib/colors";
+import { PlusIcon } from "@/components/icons";
 import Sticker from "@/components/Sticker";
 
 export const metadata = { title: "Your parties · Can Someone Bring" };
-
-const CARD_BG = { yellow: "bg-cat-yellow", pink: "bg-cat-pink", blue: "bg-cat-blue", mint: "bg-cat-mint", tomato: "bg-cat-tomato" };
 
 export default async function Dashboard() {
   const sheets = await listHostSheets();
@@ -20,35 +20,60 @@ export default async function Dashboard() {
       <HostNav
         right={
           <form action="/auth/signout" method="post">
-            <button className="h-11 px-2 text-sm font-semibold text-muted">Sign out</button>
+            <button className="h-11 px-2 text-[14px] text-muted">Sign out</button>
           </form>
         }
       />
 
-      <h1 className="mt-6 text-[40px] leading-none font-extrabold tracking-[-0.035em]">Your parties</h1>
+      <h1 className={`mt-7 ${ui.h1}`}>Your parties</h1>
 
       {sheets.length === 0 ? (
-        <div className="mt-10 rounded-[30px] bg-surface p-6 text-center">
-          <Sticker name="party" size={72} className="mx-auto" />
-          <p className="mt-3 text-xl font-extrabold tracking-tight">No parties yet</p>
-          <p className="mt-1 text-muted">Make a sheet, paste the link in your Partiful invite, done.</p>
-          <Link href="/new" className={`${ui.pill} mt-6 w-full`}>
-            Start a party sheet
+        <div className="mt-8 border-l-2 border-accent pl-5">
+          <Sticker name="party" size={56} />
+          <p className="mt-3 font-display text-[24px]">Nothing planned yet.</p>
+          <p className="mt-1 text-[15px] text-muted">Make a list, paste the link into your Partiful invite, and let friends claim what they&apos;re bringing.</p>
+          <Link href="/new" className={`${ui.pill} mt-6`}>
+            <PlusIcon size={18} />
+            Plan a party
           </Link>
         </div>
       ) : (
         <>
-          <Stack sheets={upcoming} />
+          {upcoming.length ? (
+            <ul className="mt-7 grid gap-3">
+              {upcoming.map((s, i) => (
+                <li key={s.id}>
+                  <Link
+                    href={`/sheets/${s.id}`}
+                    className={`flex items-center gap-4 rounded-[20px] px-5 py-4 text-cat-ink ${CARD_BG[CATEGORY_COLORS[i % CATEGORY_COLORS.length]]}`}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[13px] text-cat-muted">{shortDateTime(s.startsAt, s.timeZone)}</p>
+                      <p className="mt-0.5 truncate font-display text-[26px] leading-tight tracking-[-0.015em]">{s.title}</p>
+                      <p className="mt-1.5 text-[14px]">
+                        {s.needed > 0 ? `${s.needed} still needed` : "Everything's covered"}
+                        <span className="text-cat-muted"> · {s.claimed} claimed</span>
+                      </p>
+                    </div>
+                    <Sticker name={s.sticker} size={52} />
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-6 text-muted">Nothing coming up.</p>
+          )}
+
           {past.length > 0 && (
             <>
-              <h2 className="mt-10 mb-3 text-sm font-semibold tracking-wide text-muted uppercase">Past</h2>
-              <ul className="grid gap-2">
+              <h2 className={`mt-10 mb-2 ${ui.eyebrow} text-muted`}>Past</h2>
+              <ul className="border-t border-hair">
                 {past.map((s) => (
-                  <li key={s.id}>
-                    <Link href={`/sheets/${s.id}`} className="flex items-center gap-3 rounded-3xl bg-surface p-3 pr-5">
-                      <Sticker name={s.sticker} size={36} />
-                      <span className="flex-1 font-semibold">{s.title}</span>
-                      <span className="text-sm text-muted">{shortDateTime(s.startsAt, s.timeZone).split(" · ")[0]}</span>
+                  <li key={s.id} className="border-b border-hair">
+                    <Link href={`/sheets/${s.id}`} className="flex min-h-14 items-center gap-3 py-2">
+                      <Sticker name={s.sticker} size={30} />
+                      <span className="flex-1 truncate">{s.title}</span>
+                      <span className="text-[13px] text-muted">{shortDateTime(s.startsAt, s.timeZone).split(" · ")[0]}</span>
                     </Link>
                   </li>
                 ))}
@@ -61,41 +86,14 @@ export default async function Dashboard() {
       {sheets.length > 0 && (
         <Link
           href="/new"
-          className="bottom-safe fixed left-1/2 z-20 flex -translate-x-1/2 items-center gap-3 rounded-full bg-pill py-2 pr-2 pl-6 text-[15px] font-semibold text-pill-ink shadow-[0_10px_30px_rgba(0,0,0,0.25)]"
+          className="bottom-safe fixed left-1/2 z-20 flex min-h-14 w-[calc(100%-2rem)] max-w-[34rem] -translate-x-1/2 items-center justify-between gap-3 rounded-2xl bg-pill py-2 pr-2 pl-5 text-[15px] text-pill-ink shadow-[0_8px_24px_rgba(26,23,20,0.22)]"
         >
-          New party
-          <span className="grid size-10 place-items-center rounded-full bg-accent text-2xl text-white">+</span>
+          Plan a new party
+          <span className="grid size-10 place-items-center rounded-xl bg-accent text-white">
+            <PlusIcon size={20} strokeWidth={2.2} />
+          </span>
         </Link>
       )}
     </main>
-  );
-}
-
-function Stack({ sheets }: { sheets: Awaited<ReturnType<typeof listHostSheets>> }) {
-  if (!sheets.length) return <p className="mt-6 text-muted">Nothing coming up.</p>;
-  return (
-    <div className="mt-6">
-      {sheets.map((s, i) => (
-        <Link
-          key={s.id}
-          href={`/sheets/${s.id}`}
-          className={`relative block rounded-[30px] px-5 pt-5 text-cat-ink ${CARD_BG[CATEGORY_COLORS[i % CATEGORY_COLORS.length]]} ${
-            i > 0 ? "-mt-7" : ""
-          } ${i === sheets.length - 1 ? "pb-5" : "pb-12"}`}
-        >
-          <div className="flex items-start gap-3">
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold opacity-70">{shortDateTime(s.startsAt, s.timeZone)}</p>
-              <p className="mt-0.5 truncate text-[26px] leading-tight font-extrabold tracking-[-0.03em]">{s.title}</p>
-              <p className="mt-2 text-sm font-semibold">
-                {s.needed > 0 ? `${s.needed} still needed` : "Everything's covered ✓"}
-                <span className="opacity-60"> · {s.claimed} claimed</span>
-              </p>
-            </div>
-            <Sticker name={s.sticker} size={56} className="-mt-1" />
-          </div>
-        </Link>
-      ))}
-    </div>
   );
 }

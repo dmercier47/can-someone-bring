@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { getSheetBySlug } from "@/lib/sheets";
 import SignupBoard from "@/components/SignupBoard";
 import { shortDate, whenPhrase } from "@/lib/dates";
+import { ui } from "@/components/ui";
+import { ArrowUpRightIcon } from "@/components/icons";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -30,16 +32,14 @@ export default async function GuestSheetPage({ params }: Props) {
 
   return (
     <main className="mx-auto min-h-dvh w-full max-w-xl px-4 pt-4 pb-36">
-      <nav className="flex items-center justify-between">
-        <span className="text-[15px] font-extrabold tracking-tight">
+      <nav className="flex h-11 items-center justify-between">
+        <span className="font-display text-[18px] tracking-[-0.01em]">
           can someone bring<span className="text-accent">?</span>
         </span>
         {sheet.partifulUrl && (
-          <a
-            href={sheet.partifulUrl}
-            className="flex h-11 items-center gap-1.5 rounded-full bg-surface px-4 text-sm font-semibold"
-          >
-            Invite <span aria-hidden>↗</span>
+          <a href={sheet.partifulUrl} className={ui.ghost}>
+            Invite
+            <ArrowUpRightIcon size={16} />
           </a>
         )}
       </nav>
@@ -50,8 +50,8 @@ export default async function GuestSheetPage({ params }: Props) {
         dateLabel={dateLabel}
       />
 
-      <footer className="mt-14 text-center text-xs text-faint">
-        Made with <span className="font-bold">can someone bring?</span>
+      <footer className="mt-14 text-center text-[12px] text-faint">
+        Made with <span className="font-display text-muted">can someone bring?</span>
       </footer>
     </main>
   );

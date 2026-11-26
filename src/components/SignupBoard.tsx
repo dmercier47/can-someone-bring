@@ -6,6 +6,8 @@ import { categoryColor, type Category, type CategoryColor, type Claim, type Shee
 import type { StickerKey } from "@/lib/stickers";
 import { addGuestItem, claimSlot, dropClaim as dropClaimAction } from "@/app/s/[slug]/actions";
 import Sticker from "./Sticker";
+import { CloseIcon, PlusIcon } from "./icons";
+import { ui } from "./ui";
 import { useVisualViewport } from "@/lib/useVisualViewport";
 
 const NAME_KEY = "csb:name";
@@ -27,14 +29,7 @@ function saveTokens(slug: string, tokens: MyTokens) {
   } catch {}
 }
 
-// Literal class names so Tailwind picks them up.
-const CARD_BG: Record<CategoryColor, string> = {
-  yellow: "bg-cat-yellow",
-  pink: "bg-cat-pink",
-  blue: "bg-cat-blue",
-  mint: "bg-cat-mint",
-  tomato: "bg-cat-tomato",
-};
+import { CARD_BG } from "@/lib/colors";
 const AVATAR_BG = [CARD_BG.pink, CARD_BG.yellow, CARD_BG.blue, CARD_BG.mint, CARD_BG.tomato];
 
 type Panel = { kind: "claim"; slot: Slot; category: Category } | { kind: "custom" } | null;
@@ -120,13 +115,15 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
 
   // Up to three open items for the header sentence, taken round-robin across categories for variety.
   const asks = useMemo(() => {
-    const queues = categories.map((c) =>
-      c.slots.filter((s) => s.quantity - (claimsBySlot.get(s.id)?.length ?? 0) > 0).map((s) => ({ slot: s, cat: c })),
+    const queues = categories.map((c, idx) =>
+      c.slots
+        .filter((s) => s.quantity - (claimsBySlot.get(s.id)?.length ?? 0) > 0)
+        .map((s) => ({ slot: s, cat: c, color: categoryColor(c, idx) })),
     );
-    const out: { slot: Slot; sticker: StickerKey }[] = [];
+    const out: { slot: Slot; sticker: StickerKey; color: CategoryColor }[] = [];
     for (let i = 0; out.length < 3 && queues.some((q) => q.length > i); i++) {
       for (const q of queues) {
-        if (q[i] && out.length < 3) out.push({ slot: q[i].slot, sticker: q[i].slot.sticker ?? q[i].cat.sticker });
+        if (q[i] && out.length < 3) out.push({ slot: q[i].slot, sticker: q[i].slot.sticker ?? q[i].cat.sticker, color: q[i].color });
       }
     }
     return out;
@@ -154,7 +151,7 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
     setMyTokens({ ...tokens, [claim.id]: res.data.editToken });
     rememberName(data.guestName);
     setPanel(null);
-    setToast(`You're on ${lowerFirst(label)} 🎉`);
+    setToast(`Thanks! You're bringing ${lowerFirst(label)}.`);
     router.refresh();
   }
 
@@ -172,7 +169,7 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
     const { [id]: _removed, ...rest } = tokens;
     void _removed;
     setMyTokens(rest);
-    setToast("Okay, it's back up for grabs");
+    setToast("No problem. It's back on the list.");
     router.refresh();
   }
 
@@ -190,7 +187,7 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
     setMyTokens({ ...tokens, [res.data.claimId]: res.data.editToken });
     rememberName(data.guestName);
     setPanel(null);
-    setToast(`You're on ${lowerFirst(itemName)} 🎉`);
+    setToast(`Thanks! You're bringing ${lowerFirst(itemName)}.`);
     router.refresh();
   }
 
@@ -214,83 +211,84 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
 
   return (
     <>
-      {/* Header sentence: the product's name, in action */}
-      <h1 className="mt-6 text-[30px] leading-[1.16] font-normal tracking-[-0.03em] text-faint">
-        {sheet.hostName}&apos;s hosting <b className="font-extrabold text-ink">{sheet.title}</b> {when}.{" "}
+      {/* Header sentence: the product's name, in action. Open items get a marker highlight in their category color. */}
+      <h1 className="mt-7 font-display text-[30px] leading-[1.18] tracking-[-0.015em] text-faint">
+        {sheet.hostName}&apos;s hosting <span className="text-ink">{sheet.title}</span> {when}.{" "}
         {asks.length > 0 ? (
           <>
             Can someone bring{" "}
             {asks.map((a, i) => (
               <Fragment key={a.slot.id}>
-                {i > 0 && (i === asks.length - 1 ? " and " : ", ")}
-                <b className="font-extrabold text-ink">{lowerFirst(a.slot.name)}</b>
-                <Sticker name={a.sticker} size={36} className="-mt-2 ml-1 align-middle" />
+                {i > 0 && (i === asks.length - 1 ? " or " : ", ")}
+                <span className="marker" style={{ "--hl": `var(--cat-${a.color})` } as React.CSSProperties}>
+                  {lowerFirst(a.slot.name)}
+                </span>
+                <Sticker name={a.sticker} size={32} className="-mt-1.5 ml-1 align-middle" />
               </Fragment>
             ))}
             ?
           </>
         ) : (
           <>
-            <b className="font-extrabold text-ink">Everything&apos;s covered!</b>
-            <Sticker name="party" size={36} className="-mt-2 ml-1 align-middle" /> Just bring yourself.
+            <span className="marker">Everything&apos;s covered.</span>
+            <Sticker name="party" size={32} className="-mt-1.5 ml-1 align-middle" /> Just bring yourself.
           </>
         )}
       </h1>
 
-      <p className="mt-3 text-[15px] text-muted">
+      <p className="mt-3 text-[14px] text-muted">
         {dateLabel}
         {sheet.location && <> · {sheet.location}</>}
       </p>
 
-      <div className="mt-6 mb-5 flex items-end justify-between gap-4">
-        <p className="flex items-baseline gap-2">
-          <span className="text-[64px] leading-[0.8] font-extrabold tracking-[-0.05em] tabular-nums">{stillNeeded}</span>
-          <span className="text-sm font-semibold text-muted">still needed</span>
+      <div className="mt-7 mb-6 flex items-end justify-between gap-4">
+        <p className="flex items-baseline gap-2.5">
+          {/* Big number in the sans: the serif "11" reads as "ll". */}
+          <span className="text-[60px] leading-[0.75] tracking-[-0.04em] tabular-nums">{stillNeeded}</span>
+          <span className="text-[14px] text-muted">still needed</span>
         </p>
         {guests.length > 0 && (
-          <div className="flex items-center gap-2 text-sm text-muted">
+          <div className="flex items-center gap-2 text-[13px] text-muted">
             <div className="flex">
               {guests.slice(0, 4).map((g) => (
                 <span
                   key={g}
-                  className={`-ml-2 grid size-8 place-items-center rounded-full border-2 border-bg text-xs font-extrabold text-cat-ink first:ml-0 ${avatarBg(g)}`}
+                  className={`-ml-2 grid size-7 place-items-center rounded-full border-2 border-bg text-[11px] text-cat-ink first:ml-0 ${avatarBg(g)}`}
                 >
                   {initial(g)}
                 </span>
               ))}
             </div>
-            {guests.length} in
+            {guests.length} coming
           </div>
         )}
       </div>
 
       {sheet.hostNote && (
-        <p className="mb-5 rounded-3xl bg-surface px-5 py-4 text-[15px] leading-relaxed">
-          <span className="font-bold">{sheet.hostName}:</span> {sheet.hostNote}
+        <p className="mb-7 border-l-2 border-ink pl-4 text-[15px] leading-relaxed text-ink/80">
+          <span className="text-muted">{sheet.hostName} · </span>
+          {sheet.hostNote}
         </p>
       )}
 
-      {/* Category stack: every card open, one continuous scroll */}
-      <div>
+      {/* Category bands: full width on phones, every band open, one continuous scroll */}
+      <div className="-mx-4 sm:mx-0 sm:grid sm:gap-3">
         {categories.map((cat, idx) => {
           const open = cat.slots.reduce((n, s) => n + openCount(s), 0);
-          const isLast = idx === categories.length - 1;
           return (
             <section
               key={cat.id}
               aria-labelledby={`h-${cat.id}`}
-              className={`relative rounded-[30px] px-4 pt-4 text-cat-ink ${CARD_BG[categoryColor(cat, idx)]} ${
-                idx > 0 ? "-mt-7" : ""
-              } ${isLast ? "pb-4" : "pb-11"}`}
+              className={`px-5 pt-5 pb-2 text-cat-ink sm:rounded-[20px] ${CARD_BG[categoryColor(cat, idx)]}`}
             >
-              <div className="flex items-center gap-2.5">
-                <Sticker name={cat.sticker} size={44} className="-my-1.5" />
-                <h2 id={`h-${cat.id}`} className="flex-1 text-[21px] font-extrabold tracking-[-0.02em]">
+              <div className="flex items-center gap-2.5 pb-2">
+                <Sticker name={cat.sticker} size={36} className="-ml-0.5" />
+                <h2 id={`h-${cat.id}`} className="flex-1 font-display text-[24px] tracking-[-0.015em]">
                   {cat.name}
                 </h2>
-                <span className="text-sm font-semibold opacity-70">{open > 0 ? `${open} open` : "All set ✓"}</span>
+                <span className={`${ui.eyebrow} text-cat-muted`}>{open > 0 ? `${open} open` : "All set"}</span>
               </div>
-              <ul className="mt-3.5 grid gap-1.5">
+              <ul>
                 {cat.slots.map((slot) => (
                   <SlotRow
                     key={slot.id}
@@ -310,22 +308,22 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
       {/* Floating action: "something else", and what you're bringing once you've claimed */}
       {(sheet.allowGuestItems || myClaims.length > 0) && (
         <div className="animate-pop-in bottom-safe fixed left-1/2 z-20 w-[calc(100%-2rem)] max-w-[34rem] -translate-x-1/2">
-          <div className="flex items-center gap-3 rounded-full bg-pill py-2 pr-2 pl-6 text-pill-ink shadow-[0_10px_30px_rgba(0,0,0,0.25)]">
+          <div className="flex min-h-14 items-center gap-3 rounded-2xl bg-pill py-2 pr-2 pl-5 text-pill-ink shadow-[0_8px_24px_rgba(26,23,20,0.22)]">
             {myClaims.length > 0 ? (
-              <p className="min-w-0 flex-1 py-1 leading-tight">
-                <span className="block text-xs opacity-60">You&apos;re bringing</span>
-                <span className="block truncate text-[15px] font-semibold">{myClaims.map(claimLabel).join(", ")}</span>
+              <p className="min-w-0 flex-1 leading-tight">
+                <span className="block text-[12px] text-white/60">You&apos;re bringing</span>
+                <span className="block truncate text-[15px]">{myClaims.map(claimLabel).join(", ")}</span>
               </p>
             ) : (
-              <span className="flex-1 text-[15px] font-semibold">Bring something else</span>
+              <span className="flex-1 text-[15px]">Bring something else</span>
             )}
             {sheet.allowGuestItems && (
               <button
                 onClick={() => setPanel({ kind: "custom" })}
-                className="grid size-11 shrink-0 place-items-center rounded-full bg-accent text-2xl leading-none text-white active:scale-95"
+                className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent text-white active:scale-95"
                 aria-label="Bring something else"
               >
-                +
+                <PlusIcon size={20} strokeWidth={2.2} />
               </button>
             )}
           </div>
@@ -335,7 +333,7 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
       {toast && (
         <div
           role="status"
-          className="animate-fade-in fixed inset-x-0 top-4 z-50 mx-auto w-fit max-w-[90vw] rounded-full bg-pill px-5 py-3 text-sm font-semibold text-pill-ink shadow-lg"
+          className="animate-fade-in fixed inset-x-0 top-4 z-50 mx-auto w-fit max-w-[90vw] rounded-xl bg-pill px-4 py-3 text-[14px] text-pill-ink shadow-[0_8px_24px_rgba(26,23,20,0.22)]"
         >
           {toast}
         </div>
@@ -387,50 +385,50 @@ function SlotRow({
   const full = open <= 0;
   const myClaim = claims.find((c) => mine.includes(c.id));
 
+  // Second line: who's on it (and what), how many are left, or the host's note.
+  const who = claims.map((c) => {
+    const person = mine.includes(c.id) ? "You" : c.guestName;
+    return c.detail ? `${person}: ${lowerFirst(c.detail)}` : person;
+  });
+  const sub = [
+    ...(slot.quantity > 1 && !full ? [`${open} of ${slot.quantity} left`] : []),
+    ...(claims.length && !full ? who : []),
+    ...(full && claims.length ? claims.filter((c) => c.detail).map((c) => c.detail as string) : []),
+    ...(!claims.length && slot.note ? [slot.note] : []),
+  ].join(" · ");
+
   return (
-    <li className="flex min-h-14 items-center gap-3 rounded-[18px] bg-cat-row py-2.5 pr-2.5 pl-4">
+    <li className="flex min-h-16 items-center gap-3 border-t border-cat-hair py-2.5">
       <div className="min-w-0 flex-1">
-        <p className="text-[16px] leading-snug font-semibold">
-          {slot.name}
-          {slot.quantity > 1 && <span className="ml-1.5 text-sm font-normal opacity-60">×{slot.quantity}</span>}
-        </p>
-        {claims.length > 0 ? (
-          <p className="text-[13px] leading-snug opacity-70">
-            {claims.map((c, i) => (
-              <span key={c.id}>
-                {i > 0 && " · "}
-                <span className={mine.includes(c.id) ? "font-bold" : ""}>{mine.includes(c.id) ? "You" : c.guestName}</span>
-                {c.detail && <> — {lowerFirst(c.detail)}</>}
-              </span>
-            ))}
-            {!full && slot.quantity > 1 && <> · {open} left</>}
-          </p>
-        ) : (
-          slot.note && <p className="text-[13px] leading-snug opacity-70">{slot.note}</p>
-        )}
+        <p className={`text-[16px] leading-snug ${full && !myClaim ? "text-cat-muted" : ""}`}>{slot.name}</p>
+        {sub && <p className="text-[13px] leading-snug text-cat-muted">{sub}</p>}
       </div>
 
       {myClaim ? (
-        <button onClick={() => onDrop(myClaim.id)} className="h-11 shrink-0 rounded-full px-3 text-sm font-semibold underline underline-offset-2">
-          Undo
-        </button>
+        <span className="flex shrink-0 items-center gap-2">
+          <span className="text-[13px] text-cat-muted">You</span>
+          <button onClick={() => onDrop(myClaim.id)} className="h-9 rounded-full border border-cat-hair px-3.5 text-[13px]">
+            Undo
+          </button>
+        </span>
       ) : full ? (
-        <div className="flex shrink-0 pr-1" aria-label={`Covered by ${claims.map((c) => c.guestName).join(" and ")}`}>
-          {claims.slice(0, 3).map((c) => (
-            <span
-              key={c.id}
-              className={`-ml-2 grid size-8 place-items-center rounded-full border-2 border-white/80 text-xs font-extrabold first:ml-0 ${avatarBg(c.guestName)}`}
-            >
-              {initial(c.guestName)}
-            </span>
-          ))}
-        </div>
+        <span className="flex shrink-0 items-center gap-2 text-[13px] text-cat-muted" aria-label={`Covered by ${claims.map((c) => c.guestName).join(" and ")}`}>
+          <span className="flex">
+            {claims.slice(0, 3).map((c) => (
+              <span key={c.id} className="-ml-1.5 grid size-6 place-items-center rounded-full border-2 border-white/70 bg-white text-[11px] text-cat-ink first:ml-0">
+                {initial(c.guestName)}
+              </span>
+            ))}
+          </span>
+          {claims.length === 1 ? claims[0].guestName : `${claims.length} people`}
+        </span>
       ) : (
         <button
           onClick={onClaim}
-          className="h-11 shrink-0 rounded-full bg-cat-ink px-4 text-[13px] font-semibold text-white transition-transform active:scale-95"
+          className="flex h-9 shrink-0 items-center gap-1 rounded-full bg-cat-ink pr-3.5 pl-2.5 text-[13px] text-white transition-transform active:scale-95"
           aria-label={`I'll bring ${slot.name}`}
         >
+          <PlusIcon size={15} strokeWidth={2.2} />
           {slot.quantity > 1 && claims.length > 0 ? "I'll bring one" : "I'll bring it"}
         </button>
       )}
@@ -493,7 +491,7 @@ function BottomSheet({
           // Wait for the keyboard to start opening before scrolling.
           setTimeout(() => target.scrollIntoView({ block: "nearest" }), 300);
         }}
-        className={`animate-sheet-up relative w-full max-w-xl overflow-y-auto overscroll-contain rounded-t-[32px] bg-bg px-5 pt-3 shadow-2xl sm:rounded-[32px] sm:pb-6 ${
+        className={`animate-sheet-up relative w-full max-w-xl overflow-y-auto overscroll-contain rounded-t-[24px] bg-bg px-5 pt-3 shadow-2xl sm:rounded-[24px] sm:pb-6 ${
           visible?.keyboardOpen ? "pb-4" : "pb-safe"
         }`}
         style={{ maxHeight: visible ? visible.height - 12 : "90dvh" }}
@@ -503,16 +501,16 @@ function BottomSheet({
         <div className={`flex items-center gap-3 ${visible?.keyboardOpen ? "mb-3" : "mb-5"}`}>
           <Sticker name={sticker} size={visible?.keyboardOpen ? 32 : 48} />
           <h3
-            className={`flex-1 leading-tight font-extrabold tracking-[-0.02em] ${visible?.keyboardOpen ? "text-[19px]" : "text-[24px]"}`}
+            className={`flex-1 font-display leading-tight tracking-[-0.015em] ${visible?.keyboardOpen ? "text-[20px]" : "text-[26px]"}`}
           >
             {title}
           </h3>
           <button
             onClick={onClose}
-            className="-mr-1 grid size-11 shrink-0 place-items-center rounded-full bg-surface text-xl text-muted"
+            className={`-mr-1 ${ui.iconBtn} text-muted`}
             aria-label="Close"
           >
-            ×
+            <CloseIcon />
           </button>
         </div>
         {children}
@@ -521,8 +519,7 @@ function BottomSheet({
   );
 }
 
-const inputCls =
-  "w-full rounded-2xl border border-line bg-surface px-4 py-3.5 text-[16px] outline-none placeholder:text-faint focus:border-ink";
+const inputCls = ui.input;
 
 function NameAndDiet({
   name,
@@ -539,7 +536,7 @@ function NameAndDiet({
   return (
     <>
       <label className="block">
-        <span className="mb-1.5 block text-sm font-semibold">Your name</span>
+        <span className={ui.label}>Your name</span>
         <input
           className={inputCls}
           value={name}
@@ -552,7 +549,7 @@ function NameAndDiet({
       </label>
       {showDiet ? (
         <label className="block">
-          <span className="mb-1.5 block text-sm font-semibold">Dietary notes</span>
+          <span className={ui.label}>Dietary notes</span>
           <input
             className={inputCls}
             value={diet}
@@ -561,8 +558,9 @@ function NameAndDiet({
           />
         </label>
       ) : (
-        <button type="button" onClick={() => setShowDiet(true)} className="h-11 text-sm font-semibold text-accent">
-          + Add a dietary note
+        <button type="button" onClick={() => setShowDiet(true)} className="flex h-11 items-center gap-1.5 text-[14px] text-accent">
+          <PlusIcon size={16} />
+          Add a dietary note
         </button>
       )}
     </>
@@ -575,7 +573,7 @@ function SubmitButton({ children, disabled, busy }: { children: React.ReactNode;
       type="submit"
       disabled={disabled || busy}
       aria-busy={busy}
-      className="mt-1 h-14 w-full rounded-full bg-pill text-[16px] font-bold text-pill-ink transition-transform active:scale-[0.98] disabled:opacity-30 aria-busy:opacity-60"
+      className={`${ui.pill} mt-1 w-full aria-busy:opacity-60`}
     >
       {busy ? "Saving…" : children}
     </button>
@@ -607,8 +605,8 @@ function ClaimForm({
       }}
     >
       <label className="block">
-        <span className="mb-1.5 block text-sm font-semibold">
-          What exactly? <span className="font-normal text-muted">(optional)</span>
+        <span className={ui.label}>
+          What exactly? (optional)
         </span>
         <input
           className={inputCls}
@@ -652,16 +650,16 @@ function CustomForm({
       }}
     >
       <label className="block">
-        <span className="mb-1.5 block text-sm font-semibold">What are you bringing?</span>
+        <span className={ui.label}>What are you bringing?</span>
         <input className={inputCls} value={item} onChange={(e) => setItem(e.target.value)} placeholder="e.g. cranberry sauce" required />
       </label>
       {similar && (
-        <p className="rounded-2xl bg-cat-yellow px-4 py-3 text-sm text-cat-ink">
-          <b>Heads up:</b> {similar} Still want to bring it? Totally fine.
+        <p className="border-l-2 border-accent pl-3 text-[14px] leading-snug text-ink/80">
+          {similar} Still want to bring yours too?
         </p>
       )}
       <fieldset>
-        <legend className="mb-1.5 text-sm font-semibold">Which category?</legend>
+        <legend className={ui.label}>Which category?</legend>
         <div className="flex flex-wrap gap-2">
           {categories.map((c, i) => {
             const active = catId === c.id;
@@ -671,8 +669,8 @@ function CustomForm({
                 key={c.id}
                 onClick={() => setCatId(c.id)}
                 aria-pressed={active}
-                className={`flex h-11 items-center gap-1.5 rounded-full pr-4 pl-2 text-sm font-semibold text-cat-ink ring-2 transition ${
-                  active ? `${CARD_BG[categoryColor(c, i)]} ring-cat-ink` : "bg-surface ring-transparent"
+                className={`flex h-11 items-center gap-1.5 rounded-xl border pr-3.5 pl-2 text-[14px] text-cat-ink transition ${
+                  active ? `${CARD_BG[categoryColor(c, i)]} border-cat-ink` : "border-hair bg-surface"
                 }`}
               >
                 <Sticker name={c.sticker} size={26} />

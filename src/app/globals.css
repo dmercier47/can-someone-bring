@@ -1,34 +1,38 @@
 @import "tailwindcss";
 
 /*
-  Visual identity: "Sentence Stack" — cream paper, near-black ink, saturated category cards,
-  black pill buttons, Bricolage Grotesque throughout, Fluent 3D stickers.
-  Use tokens via Tailwind: bg-bg, text-ink, text-faint, bg-cat-yellow, bg-pill, etc.
+  Visual identity: "Bands" — warm paper, near-black ink, soft category tints as full-width bands,
+  hairline dividers instead of boxes-in-boxes, Hedvig Letters Serif (display) + Sans (text),
+  Fluent 3D stickers as the only illustration, drawn line icons (src/components/icons.tsx).
+  Radius scale: 12px (inputs, icon buttons), 20px (cards, sheets), pill only for actions.
+  Use tokens via Tailwind: bg-bg, text-ink, text-faint, border-hair, bg-cat-yellow, bg-pill, etc.
 */
 :root {
-  --bg: #f6f1e7;
+  --bg: #f7f3ec;
   --surface: #ffffff;
-  --ink: #141414;
-  --muted: #6b655d;
-  --faint: #a39b8f;
-  --line: #e6ddcf;
+  --ink: #1a1714;
+  --muted: #776f65;
+  --faint: #b0a79b;
+  --line: #e7e0d4;
+  --hair: rgb(26 23 20 / 0.1);
   --accent: #ff5a36;
 
-  /* Category cards keep the same colors + dark text in both modes */
-  --cat-ink: #141414;
-  --cat-row: rgb(255 255 255 / 0.72);
-  --cat-yellow: #ffd23f;
-  --cat-pink: #ffa8c5;
-  --cat-blue: #7fb2ff;
-  --cat-mint: #9ee6c2;
-  --cat-tomato: #ff7a59;
+  /* Category tints (names kept stable; values are the softer refined palette) */
+  --cat-ink: #1a1714;
+  --cat-hair: rgb(26 23 20 / 0.12);
+  --cat-muted: rgb(26 23 20 / 0.6);
+  --cat-yellow: #f6d36b; /* butter */
+  --cat-pink: #f3b4c4; /* rose */
+  --cat-blue: #a9c7f2; /* sky */
+  --cat-mint: #b7dcc3; /* sage */
+  --cat-tomato: #f0a084; /* clay */
 
-  /* Primary pill button (on cards and in sheets) */
-  --pill: #141414;
+  /* Primary action */
+  --pill: #1a1714;
   --pill-ink: #ffffff;
 }
 
-/* Light-only for now (brand decision). A dark set can be added here later. */
+/* Light-only for now (brand decision). */
 :root { color-scheme: light; }
 
 @theme inline {
@@ -38,9 +42,11 @@
   --color-muted: var(--muted);
   --color-faint: var(--faint);
   --color-line: var(--line);
+  --color-hair: var(--hair);
   --color-accent: var(--accent);
   --color-cat-ink: var(--cat-ink);
-  --color-cat-row: var(--cat-row);
+  --color-cat-hair: var(--cat-hair);
+  --color-cat-muted: var(--cat-muted);
   --color-cat-yellow: var(--cat-yellow);
   --color-cat-pink: var(--cat-pink);
   --color-cat-blue: var(--cat-blue);
@@ -48,18 +54,29 @@
   --color-cat-tomato: var(--cat-tomato);
   --color-pill: var(--pill);
   --color-pill-ink: var(--pill-ink);
-  --font-sans: var(--font-brand);
-  --font-display: var(--font-brand);
+  --font-sans: var(--font-text);
+  --font-display: var(--font-display-face);
 }
 
 html {
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
+  /* Hedvig ships one weight; never fake bold/italic (it looks smudgy). Hierarchy comes from size, face and color. */
+  font-synthesis: none;
 }
 
 body {
   background: var(--bg);
   color: var(--ink);
+}
+
+/* Signature detail: marker-pen highlight under open items, in their category color. */
+.marker {
+  color: var(--ink);
+  background: linear-gradient(transparent 60%, var(--hl, var(--cat-yellow)) 60%, var(--hl, var(--cat-yellow)) 92%, transparent 92%);
+  padding: 0 0.08em;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
 /* Bottom sheet animation */

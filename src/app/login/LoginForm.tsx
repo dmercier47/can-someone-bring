@@ -27,7 +27,7 @@ export default function LoginForm({ next, linkError }: { next: string; linkError
   return (
     <div>
       <Sticker name="plate" size={64} />
-      <h1 className="mt-3 text-[34px] leading-[1.05] font-extrabold tracking-[-0.03em]">Host a party</h1>
+      <h1 className="mt-3 font-display tracking-[-0.015em] text-[36px] leading-[1.05]">Host a party</h1>
       <p className="mt-3 text-[17px] text-muted">
         Enter your email and we&apos;ll send you a sign-in code. No password to remember.
       </p>
@@ -52,7 +52,7 @@ export default function LoginForm({ next, linkError }: { next: string; linkError
             required
           />
         </label>
-        {sendState.error && <p className="text-sm font-semibold text-accent">{sendState.error}</p>}
+        {sendState.error && <p className="text-[14px] text-accent">{sendState.error}</p>}
         <button className={`${ui.pill} w-full`} disabled={sending}>
           {sending ? "Sending…" : "Email me a code"}
         </button>
@@ -94,7 +94,7 @@ function CodeStep({ email, next, onChangeEmail }: { email: string; next: string;
   return (
     <div>
       <Sticker name="party" size={64} />
-      <h1 className="mt-3 text-[34px] leading-[1.05] font-extrabold tracking-[-0.03em]">Enter your code</h1>
+      <h1 className="mt-3 font-display tracking-[-0.015em] text-[36px] leading-[1.05]">Enter your code</h1>
       <p className="mt-3 text-[17px] text-muted">
         We emailed a sign-in code to
         <b className="block break-words text-ink">{email}</b>
@@ -119,10 +119,10 @@ function CodeStep({ email, next, onChangeEmail }: { email: string; next: string;
             maxLength={10}
             placeholder={"•".repeat(OTP_LENGTH)}
             aria-invalid={Boolean(codeState.error)}
-            className="h-20 w-full rounded-3xl border-2 border-line bg-surface px-4 text-center text-[32px] font-extrabold tracking-[0.3em] tabular-nums outline-none placeholder:text-line focus:border-ink aria-[invalid=true]:border-accent"
+            className="h-20 w-full rounded-[20px] border border-hair bg-surface px-4 text-center text-[32px] tracking-[0.3em] tabular-nums outline-none placeholder:text-line focus:border-ink focus:ring-1 focus:ring-ink aria-[invalid=true]:border-accent"
           />
         </label>
-        {codeState.error && <p className="text-sm font-semibold text-accent">{codeState.error}</p>}
+        {codeState.error && <p className="text-[14px] text-accent">{codeState.error}</p>}
         <button className={`${ui.pill} w-full`} disabled={verifying || code.length < 6}>
           {verifying ? "Signing in…" : "Sign in"}
         </button>
@@ -130,7 +130,7 @@ function CodeStep({ email, next, onChangeEmail }: { email: string; next: string;
 
       <p className="mt-6 text-center text-sm text-muted">Or tap the Sign in button in the email.</p>
 
-      <div className="mt-2 flex items-center justify-center gap-2 text-sm font-semibold text-muted">
+      <div className="mt-2 flex items-center justify-center gap-2 text-[14px] text-muted">
         <form action={resend} onSubmit={() => setResent(true)}>
           <input type="hidden" name="email" value={email} />
           <input type="hidden" name="next" value={next} />

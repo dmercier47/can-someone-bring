@@ -20,16 +20,18 @@ Everything about the product should serve that flow: the host's job is fast setu
 - **Looks good when shared.** Every sheet link has a rich preview (Open Graph image with title + date).
 - **Friendly, not corporate.** Casual copy ("Someone's on dessert 🎉"), warm visual style.
 
-## Visual identity — "Sentence Stack"
+## Visual identity: "Bands"
 
-- **Light only**: cream paper (`#f6f1e7`), near-black ink, one hot accent (`#ff5a36`, the `?` in the wordmark).
-- **Wordmark**: lowercase `can someone bring?` with the `?` in accent.
-- **Type**: Bricolage Grotesque everywhere; extra-bold for emphasis, regular in a faint warm gray for connective text.
-- **Header as a sentence**: "Sam's hosting **Friendsgiving** Saturday at 6pm. Can someone bring **stuffing** 🍞, **a pie** 🥧 and **ice** 🧊?" — bold words are live open items with inline stickers; it updates as things get claimed.
-- **Big number**: "11 still needed" plus avatar initials of who's in.
-- **Category cards**: saturated, rounded, overlapping stack. Every card is always expanded — guests scroll one list, no tapping to open categories. Default palette by position: yellow, pink, blue, mint, tomato. Hosts may optionally override per category; never required.
-- **Stickers**: Microsoft Fluent 3D emoji (MIT), pinned CDN commit, see `src/lib/stickers.ts`. Each category has one; slots may have one (used in the header sentence).
-- **Controls**: black pill buttons, round icon buttons, a floating black pill at the bottom ("Bring something else" / "You're bringing…").
+Tasteful and refined, but approachable and friendly. Deliberately avoids common AI-generated-UI tells.
+
+- **Light only**: warm paper (`#f7f3ec`), near-black ink, one hot accent (`#ff5a36`, the `?` in the wordmark).
+- **Type**: Hedvig Letters Serif for display (headline sentence, category names, page titles, wordmark) and Hedvig Letters Sans for everything else. Single weights; hierarchy from size, face and color, never faux bold.
+- **Header as a sentence**: "Sam's hosting Friendsgiving Saturday at 6pm. Can someone bring stuffing, a pie or cider?" Open items get a **marker-pen highlight in their category's color** (the signature detail) plus an inline sticker.
+- **Big number**: "11 still needed" (sans) plus guest initials.
+- **Category bands**: full-width soft tints on phones (rounded 20px cards on wider screens), items separated by hairlines, every band open in one scroll. Default palette by position: butter, rose, sky, sage, clay; hosts may override per category.
+- **Stickers**: Microsoft Fluent 3D emoji (MIT), the only illustration. Everything else uses drawn line icons (`src/components/icons.tsx`).
+- **Shape**: radius 12px (inputs, icon buttons), 20px (cards, sheets), pills only for actions.
+- **Copy**: warm and plain; "·" separators, no em dashes, no emoji in UI text.
 
 ## Users
 
@@ -103,7 +105,7 @@ claims       id, slot_id, guest_name, guest_email, detail, dietary_note,
 | `/login`              | Host  | Magic link sign-in |
 | `/dashboard`          | Host  | List of sheets |
 | `/new`                | Host  | Pick template → create sheet |
-| `/sheets/[id]/edit`   | Host  | Edit details + items |
+| (inline on `/sheets/[id]`) | Host | ✏️ on a card edits it; ⋯ menu → party details, view as guest, delete |
 | `/sheets/[id]`        | Host  | Live board + share tools |
 | `/s/[slug]`           | Guest | Public signup page |
 | `/s/[slug]/me?t=…`    | Guest | Edit my claim |

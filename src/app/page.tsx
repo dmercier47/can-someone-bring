@@ -10,18 +10,18 @@ export default async function Home() {
     <main className="mx-auto flex min-h-dvh max-w-xl flex-col px-4 pt-4 pb-12">
       <nav className="flex h-11 items-center justify-between">
         <Wordmark />
-        <Link href={user ? "/dashboard" : "/login"} className="h-11 px-2 text-sm leading-[44px] font-semibold text-muted">
+        <Link href={user ? "/dashboard" : "/login"} className="h-11 px-2 text-[14px] leading-[44px] text-muted">
           {user ? "Your parties" : "Sign in"}
         </Link>
       </nav>
 
       <div className="flex flex-1 flex-col justify-center py-12">
-        <p className="text-[34px] leading-[1.14] font-normal tracking-[-0.03em] text-faint">
-          You&apos;re hosting. Can someone bring <b className="font-extrabold text-ink">a pie</b>
+        <p className="font-display text-[36px] leading-[1.16] tracking-[-0.015em] text-faint">
+          You&apos;re hosting. Can someone bring <span className="marker" style={{ "--hl": "var(--cat-pink)" } as React.CSSProperties}>a pie</span>
           <Sticker name="pie" size={38} className="-mt-2 ml-1 align-middle" />,{" "}
-          <b className="font-extrabold text-ink">the ice</b>
+          <span className="marker" style={{ "--hl": "var(--cat-blue)" } as React.CSSProperties}>the ice</span>
           <Sticker name="ice" size={38} className="-mt-2 ml-1 align-middle" /> and{" "}
-          <b className="font-extrabold text-ink">some chairs</b>
+          <span className="marker" style={{ "--hl": "var(--cat-yellow)" } as React.CSSProperties}>some chairs</span>
           <Sticker name="chair" size={38} className="-mt-2 ml-1 align-middle" />?
         </p>
         <p className="mt-5 text-lg text-muted">

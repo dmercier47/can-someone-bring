@@ -87,5 +87,5 @@ export async function createSheet(_: NewSheetState, form: FormData): Promise<New
   // Remember the host's name for next time.
   if (user.user_metadata?.name !== hostName) await supabase.auth.updateUser({ data: { name: hostName } });
 
-  redirect(`/sheets/${sheetId}/edit?new=1`);
+  redirect(`/sheets/${sheetId}?new=1`);
 }
