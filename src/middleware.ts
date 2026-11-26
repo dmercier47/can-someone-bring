@@ -5,12 +5,18 @@ const HOST_ONLY = ["/dashboard", "/new", "/sheets"];
 
 // Keeps the host's login session fresh and sends signed-out visitors on host pages to /login.
 export async function middleware(request: NextRequest) {
-  // If Supabase falls back to the Site URL (e.g. "/?code=…"), finish the sign-in anyway.
-  const code = request.nextUrl.searchParams.get("code");
-  if (code && !request.nextUrl.pathname.startsWith("/auth/")) {
+  // If a sign-in link lands somewhere other than /auth/confirm (e.g. Supabase fell back to the
+  // Site URL: "/?code=…" or "/?token_hash=…&type=email"), forward it so the sign-in still finishes.
+  const params = request.nextUrl.searchParams;
+  if ((params.get("code") || params.get("token_hash")) && !request.nextUrl.pathname.startsWith("/auth/")) {
     const url = request.nextUrl.clone();
     url.pathname = "/auth/confirm";
-    url.search = `?code=${encodeURIComponent(code)}`;
+    const keep = new URLSearchParams();
+    for (const k of ["code", "token_hash", "type", "next"]) {
+      const v = params.get(k);
+      if (v) keep.set(k, v);
+    }
+    url.search = `?${keep}`;
     return NextResponse.redirect(url);
   }
 
