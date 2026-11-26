@@ -8,6 +8,7 @@ import { guessSticker, isSticker, STICKER_KEYS, type StickerKey } from "@/lib/st
 import { ui } from "@/components/ui";
 import Sticker from "@/components/Sticker";
 import { useVisualViewport } from "@/lib/useVisualViewport";
+import { uuid } from "@/lib/uuid";
 
 const CARD_BG: Record<CategoryColor, string> = {
   yellow: "bg-cat-yellow",
@@ -93,7 +94,7 @@ export default function SheetEditor({
   }
 
   function addSlot(catId: string) {
-    const id = crypto.randomUUID();
+    const id = uuid();
     focusId.current = `slot-${id}`;
     setCat(catId, (c) => ({ ...c, slots: [...c.slots, { id, name: "", quantity: 1 }] }));
   }
@@ -105,7 +106,7 @@ export default function SheetEditor({
   }
 
   function addCategory() {
-    const id = crypto.randomUUID();
+    const id = uuid();
     focusId.current = `cat-${id}`;
     update((d) => ({ ...d, categories: [...d.categories, { id, name: "", sticker: "plate", slots: [] }] }));
   }
