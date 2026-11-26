@@ -45,7 +45,7 @@ export async function verifyCode(_: LoginState, form: FormData): Promise<LoginSt
   const email = String(form.get("email") ?? "").trim().toLowerCase();
   const token = String(form.get("code") ?? "").replace(/\D/g, "");
   const next = safeNext(form.get("next"));
-  if (token.length < 6) return { step: "sent", email, error: "Enter the code from the email." };
+  if (token.length < 6 || token.length > 10) return { step: "sent", email, error: "Enter the code from the email." };
 
   const supabase = await supabaseServer();
   const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
