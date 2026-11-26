@@ -6,6 +6,7 @@ import { categoryColor, type Category, type CategoryColor, type Claim, type Shee
 import type { StickerKey } from "@/lib/stickers";
 import { addGuestItem, claimSlot, dropClaim as dropClaimAction } from "@/app/s/[slug]/actions";
 import Sticker from "./Sticker";
+import { useVisualViewport } from "@/lib/useVisualViewport";
 
 const NAME_KEY = "csb:name";
 /** claimId → secret edit token, per sheet, kept on this device. */
@@ -453,6 +454,7 @@ function BottomSheet({
   useEffect(() => {
     closeRef.current = onClose;
   });
+  const visible = useVisualViewport();
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -466,20 +468,45 @@ function BottomSheet({
     };
   }, []);
 
+  // When a field gets focus (or the keyboard finishes opening), keep it visible inside the sheet.
+  useEffect(() => {
+    const el = document.activeElement;
+    if (visible?.keyboardOpen && el instanceof HTMLElement && ref.current?.contains(el)) {
+      el.scrollIntoView({ block: "nearest" });
+    }
+  }, [visible?.height, visible?.keyboardOpen]);
+
   return (
-    <div className="fixed inset-0 z-40 flex items-end justify-center sm:items-center">
+    // Sized to the *visible* screen area, so on iPhone the sheet rides on top of the keyboard.
+    <div
+      className="fixed inset-x-0 top-0 z-40 flex h-dvh items-end justify-center sm:items-center"
+      style={visible ? { top: visible.top, height: visible.height } : undefined}
+    >
       <div className="animate-fade-in absolute inset-0 bg-black/40" onClick={onClose} aria-hidden />
       <div
         ref={ref}
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="animate-sheet-up pb-safe relative max-h-[90dvh] w-full max-w-xl overflow-y-auto rounded-t-[32px] bg-bg px-5 pt-3 shadow-2xl sm:rounded-[32px] sm:pb-6"
+        onFocus={(e) => {
+          const target = e.target;
+          // Wait for the keyboard to start opening before scrolling.
+          setTimeout(() => target.scrollIntoView({ block: "nearest" }), 300);
+        }}
+        className={`animate-sheet-up relative w-full max-w-xl overflow-y-auto overscroll-contain rounded-t-[32px] bg-bg px-5 pt-3 shadow-2xl sm:rounded-[32px] sm:pb-6 ${
+          visible?.keyboardOpen ? "pb-4" : "pb-safe"
+        }`}
+        style={{ maxHeight: visible ? visible.height - 12 : "90dvh" }}
       >
-        <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-line sm:hidden" aria-hidden />
-        <div className="mb-5 flex items-center gap-3">
-          <Sticker name={sticker} size={48} />
-          <h3 className="flex-1 text-[24px] leading-tight font-extrabold tracking-[-0.02em]">{title}</h3>
+        {!visible?.keyboardOpen && <div className="mx-auto mb-3 h-1.5 w-10 rounded-full bg-line sm:hidden" aria-hidden />}
+        {/* Compact header while typing, so more of the form fits above the keyboard. */}
+        <div className={`flex items-center gap-3 ${visible?.keyboardOpen ? "mb-3" : "mb-5"}`}>
+          <Sticker name={sticker} size={visible?.keyboardOpen ? 32 : 48} />
+          <h3
+            className={`flex-1 leading-tight font-extrabold tracking-[-0.02em] ${visible?.keyboardOpen ? "text-[19px]" : "text-[24px]"}`}
+          >
+            {title}
+          </h3>
           <button
             onClick={onClose}
             className="-mr-1 grid size-11 shrink-0 place-items-center rounded-full bg-surface text-xl text-muted"

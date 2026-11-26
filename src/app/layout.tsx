@@ -13,6 +13,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  // Android Chrome: shrink the page when the keyboard opens (iOS is handled by useVisualViewport).
+  interactiveWidget: "resizes-content",
   themeColor: "#f6f1e7",
 };
 
