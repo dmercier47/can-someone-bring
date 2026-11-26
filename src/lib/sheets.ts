@@ -1,6 +1,7 @@
 import "server-only";
 import { supabaseAdmin } from "./supabase/admin";
-import { STICKERS, type StickerKey } from "./stickers";
+import { supabaseServer } from "./supabase/server";
+import { guessSticker, isSticker, type StickerKey } from "./stickers";
 import { CATEGORY_COLORS, type CategoryColor, type Sheet } from "./types";
 
 type ClaimRow = { id: string; guest_name: string; detail: string | null; dietary_note: string | null; created_at: string };
@@ -29,33 +30,67 @@ type SheetRow = {
   categories: CategoryRow[];
 };
 
-function sticker(key: string | null | undefined): StickerKey | undefined {
-  return key && key in STICKERS ? (key as StickerKey) : undefined;
+function sticker(key: string | null | undefined, name: string): StickerKey | undefined {
+  return isSticker(key) ? key : guessSticker(name);
 }
 
 function color(c: string | null): CategoryColor | undefined {
   return CATEGORY_COLORS.includes(c as CategoryColor) ? (c as CategoryColor) : undefined;
 }
 
-/**
- * Public view of a sheet for the guest page. Deliberately excludes guest emails and edit tokens.
- */
+// Never select guest_email or edit_token here: this shape is sent to browsers.
+const SHEET_SELECT = `id, slug, title, host_name, starts_at, time_zone, location, host_note, partiful_url, allow_guest_items,
+  categories ( id, name, sticker, color, position,
+    slots ( id, name, quantity, note, sticker, position, created_by_guest, created_at,
+      claims ( id, guest_name, detail, dietary_note, created_at ) ) )`;
+
+/** Public view of a sheet for the guest page (server key; anyone with the link). */
 export async function getSheetBySlug(slug: string): Promise<Sheet | null> {
   if (!/^[a-z0-9-]{3,40}$/.test(slug)) return null;
-
-  const { data, error } = await supabaseAdmin()
-    .from("sheets")
-    .select(
-      `id, slug, title, host_name, starts_at, time_zone, location, host_note, partiful_url, allow_guest_items,
-       categories ( id, name, sticker, color, position,
-         slots ( id, name, quantity, note, sticker, position, created_by_guest, created_at,
-           claims ( id, guest_name, detail, dietary_note, created_at ) ) )`,
-    )
-    .eq("slug", slug)
-    .maybeSingle<SheetRow>();
-
+  const { data, error } = await supabaseAdmin().from("sheets").select(SHEET_SELECT).eq("slug", slug).maybeSingle<SheetRow>();
   if (error) throw error;
-  if (!data) return null;
+  return data ? mapSheet(data) : null;
+}
+
+/** A sheet the signed-in host owns (RLS enforces ownership). */
+export async function getHostSheet(id: string): Promise<Sheet | null> {
+  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  const supabase = await supabaseServer();
+  const { data, error } = await supabase.from("sheets").select(SHEET_SELECT).eq("id", id).maybeSingle<SheetRow>();
+  if (error) throw error;
+  return data ? mapSheet(data) : null;
+}
+
+/** All of the signed-in host's sheets, soonest first, with simple counts. */
+export async function listHostSheets() {
+  const supabase = await supabaseServer();
+  const { data, error } = await supabase
+    .from("sheets")
+    .select("id, slug, title, starts_at, time_zone, location, categories ( sticker, position, slots ( quantity, claims ( id ) ) )")
+    .order("starts_at", { ascending: true })
+    .returns<
+      { id: string; slug: string; title: string; starts_at: string; time_zone: string; location: string | null;
+        categories: { sticker: string; position: number; slots: { quantity: number; claims: { id: string }[] }[] }[] }[]
+    >();
+  if (error) throw error;
+  return data.map((s) => {
+    const slots = s.categories.flatMap((c) => c.slots);
+    const first = [...s.categories].sort((a, b) => a.position - b.position)[0];
+    return {
+      id: s.id,
+      slug: s.slug,
+      title: s.title,
+      startsAt: s.starts_at,
+      timeZone: s.time_zone,
+      location: s.location ?? undefined,
+      sticker: (isSticker(first?.sticker) ? first.sticker : "party") as StickerKey,
+      needed: slots.reduce((n, sl) => n + Math.max(0, sl.quantity - sl.claims.length), 0),
+      claimed: slots.reduce((n, sl) => n + sl.claims.length, 0),
+    };
+  });
+}
+
+function mapSheet(data: SheetRow): Sheet {
 
   const byPos = <T extends { position: number }>(a: T, b: T) => a.position - b.position;
   const categories = [...data.categories].sort(byPos);
@@ -74,14 +109,14 @@ export async function getSheetBySlug(slug: string): Promise<Sheet | null> {
     categories: categories.map((c) => ({
       id: c.id,
       name: c.name,
-      sticker: sticker(c.sticker) ?? "plate",
+      sticker: sticker(c.sticker, c.name) ?? "plate",
       color: color(c.color),
       slots: [...c.slots].sort(byPos).map((s) => ({
         id: s.id,
         name: s.name,
         quantity: s.quantity,
         note: s.note ?? undefined,
-        sticker: sticker(s.sticker),
+        sticker: sticker(s.sticker, s.name),
         createdByGuest: s.created_by_guest,
       })),
     })),

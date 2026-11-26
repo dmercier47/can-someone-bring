@@ -2,23 +2,9 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getSheetBySlug } from "@/lib/sheets";
 import SignupBoard from "@/components/SignupBoard";
+import { shortDate, whenPhrase } from "@/lib/dates";
 
 type Props = { params: Promise<{ slug: string }> };
-
-function part(d: Date, timeZone: string, opts: Intl.DateTimeFormatOptions) {
-  return new Intl.DateTimeFormat("en-US", { timeZone, ...opts }).format(d);
-}
-
-/** "Saturday at 6pm" — formatted on the server so it matches the party's time zone. */
-function whenPhrase(iso: string, timeZone: string) {
-  const d = new Date(iso);
-  const day = part(d, timeZone, { weekday: "long" });
-  const time = part(d, timeZone, { hour: "numeric", minute: "2-digit" })
-    .replace(":00", "")
-    .replace(" ", "")
-    .toLowerCase();
-  return `${day} at ${time}`;
-}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
@@ -40,8 +26,7 @@ export default async function GuestSheetPage({ params }: Props) {
   const sheet = await getSheetBySlug(slug);
   if (!sheet) notFound();
 
-  const d = new Date(sheet.startsAt);
-  const dateLabel = part(d, sheet.timeZone, { weekday: "short", month: "short", day: "numeric" });
+  const dateLabel = shortDate(sheet.startsAt, sheet.timeZone);
 
   return (
     <main className="mx-auto min-h-dvh w-full max-w-xl px-4 pt-4 pb-36">

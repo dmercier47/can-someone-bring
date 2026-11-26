@@ -50,6 +50,6 @@ export type Sheet = {
   claims: Claim[];
 };
 
-export function categoryColor(category: Category, index: number): CategoryColor {
+export function categoryColor(category: { color?: CategoryColor }, index: number): CategoryColor {
   return category.color ?? CATEGORY_COLORS[index % CATEGORY_COLORS.length];
 }

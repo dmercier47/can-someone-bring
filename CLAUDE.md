@@ -11,4 +11,6 @@ Signup sheets for dinner parties and house parties, shared via a link in a Parti
 - Colors are tokens in `src/app/globals.css` (`bg-bg`, `text-ink`, `text-faint`, `bg-pill`, `bg-cat-yellow`, …); don't hardcode hex values in components.
 - Stickers: use `<Sticker name="pie" />` (`src/components/Sticker.tsx`); add new keys in `src/lib/stickers.ts` and check the URL returns 200.
 - Guests never create accounts. Hosts sign in with email magic links.
+- Host auth: Supabase email magic link or 6-digit code (`/login`, `/auth/confirm`). `src/middleware.ts` refreshes sessions and guards `/dashboard`, `/new`, `/sheets/*`. Host reads/writes use the cookie-session client in `src/lib/supabase/server.ts` (RLS applies), never the secret key.
+- Testing as a host without email: `npm run dev:login -- host@example.test 3000` prints a one-time local sign-in link (dev only).
 - Run: `npm run dev` → http://localhost:3000. Check: `npx tsc --noEmit && npm run lint`.

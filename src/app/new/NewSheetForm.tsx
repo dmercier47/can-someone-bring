@@ -1,0 +1,137 @@
+"use client";
+
+import { useActionState, useEffect, useState } from "react";
+import { createSheet, type NewSheetState } from "./actions";
+import { TEMPLATES } from "@/lib/templates";
+import { ui } from "@/components/ui";
+import Sticker from "@/components/Sticker";
+
+/** Next Saturday at 7pm, in the browser's local time, formatted for datetime-local. */
+function defaultStart() {
+  const d = new Date();
+  d.setDate(d.getDate() + ((6 - d.getDay() + 7) % 7 || 7));
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T19:00`;
+}
+
+export default function NewSheetForm({ defaultName }: { defaultName: string }) {
+  const [state, action, pending] = useActionState<NewSheetState, FormData>(createSheet, {});
+  const [templateKey, setTemplateKey] = useState(TEMPLATES[0].key);
+  const [title, setTitle] = useState(TEMPLATES[0].title);
+  const [titleTouched, setTitleTouched] = useState(false);
+  const [timeZone, setTimeZone] = useState("");
+  const [start, setStart] = useState("");
+  const [more, setMore] = useState(false);
+
+  useEffect(() => {
+    setTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone);
+    setStart(defaultStart());
+  }, []);
+
+  function pick(key: string) {
+    setTemplateKey(key);
+    if (!titleTouched) setTitle(TEMPLATES.find((t) => t.key === key)?.title ?? "");
+  }
+
+  return (
+    <form action={action} className="space-y-7">
+      <fieldset>
+        <legend className="mb-3 text-[20px] font-extrabold tracking-tight">What kind of party?</legend>
+        <div className="grid grid-cols-2 gap-2">
+          {TEMPLATES.map((t) => {
+            const active = t.key === templateKey;
+            return (
+              <button
+                type="button"
+                key={t.key}
+                onClick={() => pick(t.key)}
+                aria-pressed={active}
+                className={`flex rounded-3xl p-4 text-left ring-2 transition ${
+                  active ? "bg-cat-yellow text-cat-ink ring-cat-ink" : "bg-surface ring-transparent"
+                } ${t.key === "blank" ? "col-span-2 flex-row items-center gap-3" : "min-h-[116px] flex-col items-start"}`}
+              >
+                <Sticker name={t.sticker} size={t.key === "blank" ? 32 : 40} />
+                <span className={t.key === "blank" ? "" : "mt-auto"}>
+                  <span className="block text-[16px] leading-tight font-extrabold">{t.name}</span>
+                  <span className="block text-[13px] leading-snug opacity-70">{t.blurb}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <input type="hidden" name="template" value={templateKey} />
+      </fieldset>
+
+      <fieldset className="space-y-4">
+        <legend className="mb-3 text-[20px] font-extrabold tracking-tight">The details</legend>
+        <label className="block">
+          <span className={ui.label}>Party name</span>
+          <input
+            name="title"
+            className={ui.input}
+            value={title}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              setTitleTouched(true);
+            }}
+            placeholder="e.g. Sam's birthday dinner"
+            maxLength={80}
+            required
+          />
+          <span className="mt-1.5 block text-[13px] text-muted">
+            Guests see: &ldquo;{defaultName || "Sam"}&apos;s hosting <b>{title || "…"}</b> Saturday at 7pm.&rdquo;
+          </span>
+        </label>
+        <label className="block">
+          <span className={ui.label}>Your name</span>
+          <input name="hostName" className={ui.input} defaultValue={defaultName} autoComplete="given-name" placeholder="First name is fine" maxLength={60} required />
+        </label>
+        <label className="block">
+          <span className={ui.label}>When</span>
+          <input name="startsAt" type="datetime-local" className={ui.input} value={start} onChange={(e) => setStart(e.target.value)} required />
+          <input type="hidden" name="timeZone" value={timeZone} />
+        </label>
+        <label className="block">
+          <span className={ui.label}>
+            Partiful invite link <span className="font-normal text-muted">(optional)</span>
+          </span>
+          <input name="partifulUrl" type="url" inputMode="url" className={ui.input} placeholder="https://partiful.com/e/…" />
+          <span className="mt-1.5 block text-[13px] text-muted">Adds an &ldquo;Invite&rdquo; button so guests can hop back. You can add it later.</span>
+        </label>
+
+        {more ? (
+          <>
+            <label className="block">
+              <span className={ui.label}>
+                Where <span className="font-normal text-muted">(optional)</span>
+              </span>
+              <input name="location" className={ui.input} placeholder="e.g. Sam's place · Brooklyn" maxLength={120} />
+            </label>
+            <label className="block">
+              <span className={ui.label}>
+                Note to guests <span className="font-normal text-muted">(optional)</span>
+              </span>
+              <textarea
+                name="hostNote"
+                rows={3}
+                className={`${ui.input} resize-none`}
+                placeholder="I've got the turkey covered! Grab anything below."
+                maxLength={500}
+              />
+            </label>
+          </>
+        ) : (
+          <button type="button" onClick={() => setMore(true)} className="h-11 text-sm font-semibold text-accent">
+            + Add a location or note
+          </button>
+        )}
+      </fieldset>
+
+      {state.error && <p className="rounded-2xl bg-cat-yellow px-4 py-3 text-sm font-semibold text-cat-ink">{state.error}</p>}
+
+      <button className={`${ui.pill} w-full`} disabled={pending || !timeZone}>
+        {pending ? "Creating…" : "Next: the list"}
+      </button>
+    </form>
+  );
+}

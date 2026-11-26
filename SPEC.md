@@ -112,8 +112,8 @@ claims       id, slot_id, guest_name, guest_email, detail, dietary_note,
 
 1. ✅ Guest signup page (`/s/[slug]`) with mock data — nail the mobile feel first.
 2. ✅ Supabase schema + real data for the guest page; claiming works.
-3. Host auth, create-from-template, edit items.
-4. Host board with realtime + share/copy tools.
+3. ✅ Host auth, create-from-template, edit items.
+4. Host board with realtime + share/copy tools. (✅ share/copy tools and a basic board; realtime still to do)
 5. OG preview images.
 6. Email reminders.
 7. Landing page, polish, launch to friends.
