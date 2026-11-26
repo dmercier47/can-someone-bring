@@ -1,6 +1,7 @@
 "use server";
 
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { NEXT_COOKIE } from "@/lib/auth-redirect";
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase/server";
 
@@ -20,10 +21,15 @@ export async function sendLink(_: LoginState, form: FormData): Promise<LoginStat
   const h = await headers();
   const origin = h.get("origin") ?? `http://${h.get("host")}`;
 
+  // Remember where to go after sign-in in a cookie, so the return address we give Supabase is a
+  // plain URL. (A query string on it can fail Supabase's Redirect URLs allow-list check, which makes
+  // Supabase silently fall back to the Site URL.)
+  (await cookies()).set(NEXT_COOKIE, next, { path: "/", maxAge: 60 * 60, httpOnly: true, sameSite: "lax" });
+
   const supabase = await supabaseServer();
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: { emailRedirectTo: `${origin}/auth/confirm?next=${encodeURIComponent(next)}`, shouldCreateUser: true },
+    options: { emailRedirectTo: `${origin}/auth/confirm`, shouldCreateUser: true },
   });
 
   if (error) {

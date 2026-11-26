@@ -7,6 +7,7 @@ import { categoryColor, CATEGORY_COLORS, type CategoryColor } from "@/lib/types"
 import { guessSticker, isSticker, STICKER_KEYS, type StickerKey } from "@/lib/stickers";
 import { ui } from "@/components/ui";
 import Sticker from "@/components/Sticker";
+import { useVisualViewport } from "@/lib/useVisualViewport";
 
 const CARD_BG: Record<CategoryColor, string> = {
   yellow: "bg-cat-yellow",
@@ -35,6 +36,32 @@ export default function SheetEditor({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
+  const visible = useVisualViewport();
+  // While the keyboard is open: distance from the layout viewport's bottom to the keyboard's top edge.
+  const keyboard = visible?.keyboardOpen
+    ? { bottom: Math.max(8, window.innerHeight - (visible.top + visible.height) + 8) }
+    : null;
+
+  // Keep the field being edited in the middle of the visible area, clear of the Save bar.
+  useEffect(() => {
+    if (!visible?.keyboardOpen) return;
+    const el = document.activeElement;
+    if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) placeInVisibleArea(el);
+  }, [visible?.keyboardOpen, visible?.height]);
+  useEffect(() => {
+    const onFocusIn = (e: FocusEvent) => {
+      const el = e.target;
+      if (!(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) return;
+      // Wait for the keyboard animation, then center the field.
+      setTimeout(() => {
+        const vv = window.visualViewport;
+        const keyboardOpen = vv && vv.scale <= 1.01 && window.innerHeight - vv.height > 120;
+        if (keyboardOpen && document.activeElement === el) placeInVisibleArea(el);
+      }, 350);
+    };
+    document.addEventListener("focusin", onFocusIn);
+    return () => document.removeEventListener("focusin", onFocusIn);
+  }, []);
   const focusId = useRef<string | null>(null);
 
   // Warn before leaving with unsaved changes.
@@ -267,10 +294,19 @@ export default function SheetEditor({
         </form>
       )}
 
-      {/* Save bar */}
-      <div className="bottom-safe fixed left-1/2 z-20 w-[calc(100%-2rem)] max-w-[34rem] -translate-x-1/2">
+      {/* Save bar: rides just above the keyboard while typing, sits at the bottom otherwise */}
+      <div
+        className={`fixed left-1/2 z-20 w-[calc(100%-2rem)] max-w-[34rem] -translate-x-1/2 ${keyboard ? "" : "bottom-safe"}`}
+        style={keyboard ? { bottom: keyboard.bottom } : undefined}
+      >
         {error && <p className="mb-2 rounded-2xl bg-cat-yellow px-4 py-3 text-sm font-semibold text-cat-ink shadow">{error}</p>}
-        <button onClick={save} disabled={saving} className={`${ui.pill} w-full shadow-[0_10px_30px_rgba(0,0,0,0.25)]`}>
+        <button
+          // Keep focus in the field being edited so the keyboard doesn't drop on tap.
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={save}
+          disabled={saving}
+          className={`${ui.pill} w-full shadow-[0_10px_30px_rgba(0,0,0,0.25)] ${keyboard ? "h-12 text-[15px]" : ""}`}
+        >
           {saving ? "Saving…" : isNew ? "Save & get my link" : dirty ? "Save changes" : "Done"}
         </button>
       </div>
@@ -285,6 +321,18 @@ export default function SheetEditor({
       )}
     </>
   );
+}
+
+/**
+ * Scroll so a field sits about a third of the way down the part of the screen that's visible
+ * above the keyboard, which keeps it clear of the floating Save bar. (scrollIntoView centers in
+ * the full layout viewport, which on iPhone is partly behind the keyboard.)
+ */
+function placeInVisibleArea(el: HTMLElement) {
+  const vv = window.visualViewport;
+  if (!vv) return;
+  const target = vv.offsetTop + vv.height * 0.33;
+  window.scrollBy({ top: el.getBoundingClientRect().top - target, behavior: "instant" });
 }
 
 function Field({ label, optional, children }: { label: string; optional?: boolean; children: React.ReactNode }) {

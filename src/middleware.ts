@@ -5,6 +5,15 @@ const HOST_ONLY = ["/dashboard", "/new", "/sheets"];
 
 // Keeps the host's login session fresh and sends signed-out visitors on host pages to /login.
 export async function middleware(request: NextRequest) {
+  // If Supabase falls back to the Site URL (e.g. "/?code=…"), finish the sign-in anyway.
+  const code = request.nextUrl.searchParams.get("code");
+  if (code && !request.nextUrl.pathname.startsWith("/auth/")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/confirm";
+    url.search = `?code=${encodeURIComponent(code)}`;
+    return NextResponse.redirect(url);
+  }
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -39,5 +48,5 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   // Guest pages (/s/...) don't need a session; skip them and static assets for speed.
-  matcher: ["/dashboard/:path*", "/new", "/sheets/:path*", "/login", "/auth/:path*"],
+  matcher: ["/", "/dashboard/:path*", "/new", "/sheets/:path*", "/login", "/auth/:path*"],
 };

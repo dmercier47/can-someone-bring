@@ -1,8 +1,9 @@
-import { NextResponse, type NextRequest } from "next/server";
 import { supabaseServer } from "@/lib/supabase/server";
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   const supabase = await supabaseServer();
   await supabase.auth.signOut();
-  return NextResponse.redirect(new URL("/", request.nextUrl.origin), { status: 303 });
+  // Relative Location keeps the visitor on the address they used (request.nextUrl.origin is
+  // "localhost" in route handlers, which breaks when testing from a phone).
+  return new Response(null, { status: 303, headers: { Location: "/" } });
 }
