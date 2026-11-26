@@ -248,22 +248,27 @@ export default function SheetEditor({
             <ul className="mt-2 grid grid-cols-1 gap-1.5">
               {cat.slots.map((slot) => (
                 <li key={slot.id} className="flex items-center gap-1 rounded-[18px] bg-cat-row py-1.5 pr-1.5 pl-1.5">
-                  <input
-                    id={`slot-${slot.id}`}
-                    className="h-11 w-0 min-w-0 flex-1 rounded-xl bg-transparent px-2.5 text-[16px] font-semibold outline-none placeholder:text-cat-ink/40 focus:bg-white"
-                    value={slot.name}
-                    onChange={(e) =>
-                      setCat(cat.id, (c) => ({ ...c, slots: c.slots.map((s) => (s.id === slot.id ? { ...s, name: e.target.value } : s)) }))
-                    }
-                    onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addSlot(cat.id))}
-                    placeholder="Item, e.g. a salad"
-                    maxLength={80}
-                    aria-label="Item name"
-                    enterKeyHint="next"
-                  />
-                  {(claimCounts[slot.id] ?? 0) > 0 && (
-                    <span className="shrink-0 text-xs font-semibold opacity-60">{claimCounts[slot.id]} claimed</span>
-                  )}
+                  {/* Name gets the full row width; the claim count sits underneath so it never squeezes the name. */}
+                  <div className="flex w-0 min-w-0 flex-1 flex-col">
+                    <input
+                      id={`slot-${slot.id}`}
+                      className={`w-full rounded-xl bg-transparent px-2.5 text-[16px] font-semibold outline-none placeholder:text-cat-ink/40 focus:bg-white ${
+                        (claimCounts[slot.id] ?? 0) > 0 ? "h-8 pt-1" : "h-11"
+                      }`}
+                      value={slot.name}
+                      onChange={(e) =>
+                        setCat(cat.id, (c) => ({ ...c, slots: c.slots.map((s) => (s.id === slot.id ? { ...s, name: e.target.value } : s)) }))
+                      }
+                      onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addSlot(cat.id))}
+                      placeholder="Item, e.g. a salad"
+                      maxLength={80}
+                      aria-label="Item name"
+                      enterKeyHint="next"
+                    />
+                    {(claimCounts[slot.id] ?? 0) > 0 && (
+                      <span className="px-2.5 pb-1 text-xs font-semibold opacity-60">{claimCounts[slot.id]} claimed</span>
+                    )}
+                  </div>
                   <Stepper
                     value={slot.quantity}
                     onChange={(q) =>

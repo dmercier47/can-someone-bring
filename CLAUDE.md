@@ -15,3 +15,4 @@ Signup sheets for dinner parties and house parties, shared via a link in a Parti
 - Testing as a host without email: `npm run dev:login -- host@example.test 3000` prints a one-time local sign-in link (dev only). Add a full origin (e.g. `http://macbook-air.local:3001`) to get a link that works on a phone.
 - Phone testing: use the Mac's `.local` name (e.g. `http://macbook-air.local:3001`), not its 192.168.x.x IP — Supabase won't redirect to raw private IPs, so sign-in links fall back to the Site URL. The `.local` origin must be in Supabase → Auth → URL Configuration → Redirect URLs, and `next.config.ts` `allowedDevOrigins` allows it in dev.
 - Run: `npm run dev` → http://localhost:3000. Check: `npx tsc --noEmit && npm run lint`.
+- Don't run `npm run build` while the dev server is running: both use `.next/` and the build breaks the dev server (ENOENT on `_buildManifest`). Stop dev first, or restart it after.
