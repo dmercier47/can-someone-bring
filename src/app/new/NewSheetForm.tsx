@@ -14,11 +14,22 @@ function defaultStart() {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T19:00`;
 }
 
+/** "2026-11-28T19:30" → "Saturday at 7:30pm", matching what guests will see. */
+function previewWhen(local: string) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(local);
+  if (!m) return "";
+  const [, y, mo, d, h, mi] = m.map(Number);
+  const day = new Date(y, mo - 1, d).toLocaleDateString("en-US", { weekday: "long" });
+  const hour = h % 12 || 12;
+  return `${day} at ${hour}${mi ? `:${String(mi).padStart(2, "0")}` : ""}${h < 12 ? "am" : "pm"}`;
+}
+
 export default function NewSheetForm({ defaultName }: { defaultName: string }) {
   const [state, action, pending] = useActionState<NewSheetState, FormData>(createSheet, {});
   const [templateKey, setTemplateKey] = useState(TEMPLATES[0].key);
   const [title, setTitle] = useState(TEMPLATES[0].title);
   const [titleTouched, setTitleTouched] = useState(false);
+  const [hostName, setHostName] = useState(defaultName);
   const [timeZone, setTimeZone] = useState("");
   const [start, setStart] = useState("");
   const [more, setMore] = useState(false);
@@ -78,13 +89,23 @@ export default function NewSheetForm({ defaultName }: { defaultName: string }) {
             maxLength={80}
             required
           />
-          <span className="mt-1.5 block text-[13px] text-muted">
-            Guests see: &ldquo;{defaultName || "Sam"}&apos;s hosting <b>{title || "…"}</b> Saturday at 7pm.&rdquo;
-          </span>
         </label>
         <label className="block">
           <span className={ui.label}>Your name</span>
-          <input name="hostName" className={ui.input} defaultValue={defaultName} autoComplete="given-name" placeholder="First name is fine" maxLength={60} required />
+          <input
+            name="hostName"
+            className={ui.input}
+            value={hostName}
+            onChange={(e) => setHostName(e.target.value)}
+            autoComplete="given-name"
+            placeholder="First name is fine"
+            maxLength={60}
+            required
+          />
+          <span className="mt-1.5 block text-[13px] text-muted">
+            Guests see: &ldquo;{hostName.trim() || "You"}&apos;s hosting <b>{title.trim() || "…"}</b>
+            {start && <> {previewWhen(start)}</>}.&rdquo;
+          </span>
         </label>
         <label className="block">
           <span className={ui.label}>When</span>
