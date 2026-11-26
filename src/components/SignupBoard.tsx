@@ -1,11 +1,30 @@
 "use client";
 
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { categoryColor, type Category, type CategoryColor, type Claim, type Sheet, type Slot } from "@/lib/types";
 import type { StickerKey } from "@/lib/stickers";
+import { addGuestItem, claimSlot, dropClaim as dropClaimAction } from "@/app/s/[slug]/actions";
 import Sticker from "./Sticker";
 
 const NAME_KEY = "csb:name";
+/** claimId → secret edit token, per sheet, kept on this device. */
+const mineKey = (slug: string) => `csb:mine:${slug}`;
+type MyTokens = Record<string, string>;
+
+function loadTokens(slug: string): MyTokens {
+  try {
+    return JSON.parse(localStorage.getItem(mineKey(slug)) ?? "{}") as MyTokens;
+  } catch {
+    return {};
+  }
+}
+
+function saveTokens(slug: string, tokens: MyTokens) {
+  try {
+    localStorage.setItem(mineKey(slug), JSON.stringify(tokens));
+  } catch {}
+}
 
 // Literal class names so Tailwind picks them up.
 const CARD_BG: Record<CategoryColor, string> = {
@@ -18,10 +37,6 @@ const CARD_BG: Record<CategoryColor, string> = {
 const AVATAR_BG = [CARD_BG.pink, CARD_BG.yellow, CARD_BG.blue, CARD_BG.mint, CARD_BG.tomato];
 
 type Panel = { kind: "claim"; slot: Slot; category: Category } | { kind: "custom" } | null;
-
-function uid() {
-  return Math.random().toString(36).slice(2, 10);
-}
 
 function initial(name: string) {
   return name.trim().charAt(0).toUpperCase() || "?";
@@ -48,18 +63,41 @@ function lowerFirst(s: string) {
 }
 
 export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; when: string; dateLabel: string }) {
+  const router = useRouter();
   const [categories, setCategories] = useState<Category[]>(sheet.categories);
   const [claims, setClaims] = useState<Claim[]>(sheet.claims);
-  const [mine, setMine] = useState<string[]>([]);
+  const [tokens, setTokens] = useState<MyTokens>({});
   const [name, setName] = useState("");
   const [panel, setPanel] = useState<Panel>(null);
   const [toast, setToast] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  // The server is the source of truth: adopt fresh data whenever the page re-renders with it.
+  useEffect(() => {
+    setCategories(sheet.categories);
+    setClaims(sheet.claims);
+  }, [sheet]);
 
   useEffect(() => {
     try {
       setName(localStorage.getItem(NAME_KEY) ?? "");
     } catch {}
-  }, []);
+    setTokens(loadTokens(sheet.slug));
+  }, [sheet.slug]);
+
+  // Pick up other guests' claims when someone comes back to the tab.
+  useEffect(() => {
+    const onVisible = () => document.visibilityState === "visible" && router.refresh();
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [router]);
+
+  const mine = useMemo(() => Object.keys(tokens), [tokens]);
+
+  function setMyTokens(next: MyTokens) {
+    setTokens(next);
+    saveTokens(sheet.slug, next);
+  }
 
   useEffect(() => {
     if (!toast) return;
@@ -100,25 +138,59 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
     } catch {}
   }
 
-  function addClaim(slotId: string, data: { guestName: string; detail?: string; dietaryNote?: string }, label: string) {
-    const claim: Claim = { id: uid(), slotId, ...data };
+  async function addClaim(slotId: string, data: { guestName: string; detail?: string; dietaryNote?: string }, label: string) {
+    setBusy(true);
+    const res = await claimSlot(sheet.slug, slotId, data);
+    setBusy(false);
+    if (!res.ok) {
+      setToast(res.error);
+      setPanel(null);
+      router.refresh();
+      return;
+    }
+    const claim: Claim = { id: res.data.claimId, slotId, ...data };
     setClaims((cs) => [...cs, claim]);
-    setMine((m) => [...m, claim.id]);
+    setMyTokens({ ...tokens, [claim.id]: res.data.editToken });
     rememberName(data.guestName);
     setPanel(null);
     setToast(`You're on ${lowerFirst(label)} 🎉`);
+    router.refresh();
   }
 
-  function dropClaim(id: string) {
-    setClaims((cs) => cs.filter((c) => c.id !== id));
-    setMine((m) => m.filter((x) => x !== id));
+  async function dropClaim(id: string) {
+    const token = tokens[id];
+    if (!token) return;
+    const prev = claims;
+    setClaims((cs) => cs.filter((c) => c.id !== id)); // optimistic
+    const res = await dropClaimAction(sheet.slug, id, token);
+    if (!res.ok) {
+      setClaims(prev);
+      setToast(res.error);
+      return;
+    }
+    const { [id]: _removed, ...rest } = tokens;
+    void _removed;
+    setMyTokens(rest);
     setToast("Okay, it's back up for grabs");
+    router.refresh();
   }
 
-  function addCustom(categoryId: string, itemName: string, data: { guestName: string; dietaryNote?: string }) {
-    const slot: Slot = { id: uid(), name: itemName, quantity: 1, createdByGuest: true };
+  async function addCustom(categoryId: string, itemName: string, data: { guestName: string; dietaryNote?: string }) {
+    setBusy(true);
+    const res = await addGuestItem(sheet.slug, categoryId, itemName, data);
+    setBusy(false);
+    if (!res.ok) {
+      setToast(res.error);
+      return;
+    }
+    const slot: Slot = { id: res.data.slotId, name: itemName, quantity: 1, createdByGuest: true };
     setCategories((cats) => cats.map((c) => (c.id === categoryId ? { ...c, slots: [...c.slots, slot] } : c)));
-    addClaim(slot.id, data, itemName);
+    setClaims((cs) => [...cs, { id: res.data.claimId, slotId: slot.id, ...data }]);
+    setMyTokens({ ...tokens, [res.data.claimId]: res.data.editToken });
+    rememberName(data.guestName);
+    setPanel(null);
+    setToast(`You're on ${lowerFirst(itemName)} 🎉`);
+    router.refresh();
   }
 
   function findSimilar(text: string): string | null {
@@ -276,6 +348,7 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
         >
           {panel.kind === "claim" ? (
             <ClaimForm
+              busy={busy}
               key={panel.slot.id}
               slot={panel.slot}
               defaultName={name}
@@ -283,6 +356,7 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
             />
           ) : (
             <CustomForm
+              busy={busy}
               categories={categories}
               defaultName={name}
               findSimilar={findSimilar}
@@ -468,14 +542,15 @@ function NameAndDiet({
   );
 }
 
-function SubmitButton({ children, disabled }: { children: React.ReactNode; disabled?: boolean }) {
+function SubmitButton({ children, disabled, busy }: { children: React.ReactNode; disabled?: boolean; busy?: boolean }) {
   return (
     <button
       type="submit"
-      disabled={disabled}
-      className="mt-1 h-14 w-full rounded-full bg-pill text-[16px] font-bold text-pill-ink transition-transform active:scale-[0.98] disabled:opacity-30"
+      disabled={disabled || busy}
+      aria-busy={busy}
+      className="mt-1 h-14 w-full rounded-full bg-pill text-[16px] font-bold text-pill-ink transition-transform active:scale-[0.98] disabled:opacity-30 aria-busy:opacity-60"
     >
-      {children}
+      {busy ? "Saving…" : children}
     </button>
   );
 }
@@ -483,10 +558,12 @@ function SubmitButton({ children, disabled }: { children: React.ReactNode; disab
 function ClaimForm({
   slot,
   defaultName,
+  busy,
   onSubmit,
 }: {
   slot: Slot;
   defaultName: string;
+  busy: boolean;
   onSubmit: (d: { guestName: string; detail?: string; dietaryNote?: string }) => void;
 }) {
   const [name, setName] = useState(defaultName);
@@ -514,7 +591,7 @@ function ClaimForm({
         />
       </label>
       <NameAndDiet name={name} setName={setName} diet={diet} setDiet={setDiet} />
-      <SubmitButton disabled={!name.trim()}>I&apos;m bringing it</SubmitButton>
+      <SubmitButton busy={busy} disabled={!name.trim()}>I&apos;m bringing it</SubmitButton>
     </form>
   );
 }
@@ -522,11 +599,13 @@ function ClaimForm({
 function CustomForm({
   categories,
   defaultName,
+  busy,
   findSimilar,
   onSubmit,
 }: {
   categories: Category[];
   defaultName: string;
+  busy: boolean;
   findSimilar: (s: string) => string | null;
   onSubmit: (categoryId: string, item: string, d: { guestName: string; dietaryNote?: string }) => void;
 }) {
@@ -577,7 +656,7 @@ function CustomForm({
         </div>
       </fieldset>
       <NameAndDiet name={name} setName={setName} diet={diet} setDiet={setDiet} />
-      <SubmitButton disabled={!item.trim() || !name.trim()}>Add it</SubmitButton>
+      <SubmitButton busy={busy} disabled={!item.trim() || !name.trim()}>Add it</SubmitButton>
     </form>
   );
 }

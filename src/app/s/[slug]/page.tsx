@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getSheetBySlug } from "@/lib/mock";
+import { getSheetBySlug } from "@/lib/sheets";
 import SignupBoard from "@/components/SignupBoard";
 
 type Props = { params: Promise<{ slug: string }> };
