@@ -60,7 +60,7 @@ export default async function Home() {
           You&apos;re hosting. Can someone bring <Highlight ask={a} />, <Highlight ask={b} /> and <Highlight ask={c} />?
         </p>
         <p className="mt-5 text-lg text-muted">
-          For dinners, birthdays, pregames and the after. Make a list, drop the link in your Partiful, and let your people
+          For dinners, birthdays, pregames and the afters. Make a list, drop the link in your Partiful, and let your people
           claim what they&apos;re bringing. No app, no accounts for guests.
         </p>
         <div className="mt-8 grid gap-2 sm:flex">
