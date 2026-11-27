@@ -1,6 +1,6 @@
 ---
-name: ship
-description: Run one piece of work through the full agent pipeline (product-manager, customer, tech-lead, engineer, qa, pr-reviewer) with a human checkpoint after planning. Use when the user says /ship, "ship the next thing", or "run the pipeline" on a feature or bug.
+name: ship-feature
+description: Run one piece of work through the full agent pipeline (product-manager, customer, tech-lead, engineer, qa, pr-reviewer) with a human checkpoint after planning. Use when the user says /ship-feature, "ship the next thing", or "run the pipeline" on a feature or bug.
 ---
 
 # Ship one change through the pipeline
