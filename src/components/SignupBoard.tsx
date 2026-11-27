@@ -263,7 +263,8 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
                 </span>
               ))}
             </div>
-            {guests.length} coming
+            {/* Who's bringing something, not who's attending: RSVPs live in Partiful. */}
+            {guests.length} bringing
           </div>
         )}
       </div>
