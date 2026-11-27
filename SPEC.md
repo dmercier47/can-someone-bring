@@ -45,7 +45,7 @@ Tasteful and refined, but approachable and friendly. Deliberately avoids common 
 ### Host
 - Sign in with email magic link.
 - **Create sheet**: title, date/time, location (optional), note from host (optional), Partiful URL (optional).
-- **Start from a template**: Dinner Party, Friendsgiving, BBQ, House Party, Blank.
+- **Start from a template**: Start from scratch (default), Dinner party, Park hang, House party, Pregame. Templates list only what a guest would happily bring (about 10 spots or fewer). Seasonal ones (e.g. Friendsgiving) can come back in season.
 - **Edit items**: categories (e.g. Mains, Sides, Desserts, Drinks, Supplies, Help) containing slots. A slot has a name, optional quantity ("Sides ×4" = 4 claimable spots), optional note.
 - Toggle "guests can add their own items" (default on).
 - **Share**: short link (`/s/k3x9ab`) + "Copy for Partiful" button that copies a ready-made line, e.g. `🍽 Can someone bring something? Claim a dish here: https://…/s/k3x9ab`.

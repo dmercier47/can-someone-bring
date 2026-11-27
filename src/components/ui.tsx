@@ -10,6 +10,9 @@ export const ui = {
     "w-full rounded-xl border border-hair bg-surface px-4 py-3.5 text-[16px] outline-none placeholder:text-faint focus:border-ink",
   label: "mb-1.5 block text-[13px] text-muted",
   pill: "inline-flex h-14 items-center justify-center gap-2 rounded-full bg-pill px-7 text-[16px] text-pill-ink transition-transform active:scale-[0.98] disabled:opacity-30",
+  /** Secondary action next to a `pill`: same shape and size, outlined. */
+  pillOutline:
+    "inline-flex h-14 items-center justify-center gap-2 rounded-full border border-ink/25 px-7 text-[16px] text-ink transition-transform active:scale-[0.98]",
   pillSmall:
     "inline-flex h-10 items-center justify-center gap-1.5 rounded-full bg-pill pr-4 pl-3 text-[14px] text-pill-ink transition-transform active:scale-95 disabled:opacity-30",
   ghost: "inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-hair bg-surface px-4 text-[14px]",

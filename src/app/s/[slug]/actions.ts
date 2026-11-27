@@ -18,7 +18,7 @@ function clean(s: unknown, max: number): string | undefined {
 }
 
 function friendly(message: string): string {
-  if (message.includes("slot_full")) return "Someone just grabbed that one. Pick another?";
+  if (message.includes("slot_full")) return "Someone beat you to it. Pick another?";
   if (message.includes("not_found")) return "That item isn't on this sheet anymore.";
   return "Something went wrong. Try again?";
 }

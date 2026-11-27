@@ -50,8 +50,10 @@ export default function NewSheetForm({ defaultName }: { defaultName: string }) {
       <fieldset>
         <legend className="mb-3 font-display tracking-[-0.015em] text-[24px]">What kind of party?</legend>
         <div className="grid grid-cols-2 gap-2">
-          {TEMPLATES.map((t) => {
+          {TEMPLATES.map((t, i) => {
             const active = t.key === templateKey;
+            // "Start from scratch" spans the row; so does a lone last card in the 2-column grid.
+            const wide = t.key === "blank" || (i === TEMPLATES.length - 1 && (TEMPLATES.length - 1) % 2 === 1);
             return (
               <button
                 type="button"
@@ -60,10 +62,10 @@ export default function NewSheetForm({ defaultName }: { defaultName: string }) {
                 aria-pressed={active}
                 className={`flex rounded-[20px] border p-4 text-left transition ${
                   active ? "border-cat-ink bg-cat-yellow text-cat-ink" : "border-hair bg-surface"
-                } ${t.key === "blank" ? "col-span-2 flex-row items-center gap-3" : "min-h-[116px] flex-col items-start"}`}
+                } ${wide ? "col-span-2 flex-row items-center gap-3" : "min-h-[116px] flex-col items-start"}`}
               >
-                <Sticker name={t.sticker} size={t.key === "blank" ? 32 : 40} />
-                <span className={t.key === "blank" ? "" : "mt-auto"}>
+                <Sticker name={t.sticker} size={wide ? 32 : 40} />
+                <span className={wide ? "" : "mt-auto"}>
                   <span className="block font-display text-[18px] leading-tight">{t.name}</span>
                   <span className="block text-[13px] leading-snug opacity-65">{t.blurb}</span>
                 </span>

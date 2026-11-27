@@ -151,7 +151,7 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
     setMyTokens({ ...tokens, [claim.id]: res.data.editToken });
     rememberName(data.guestName);
     setPanel(null);
-    setToast(`Thanks! You're bringing ${lowerFirst(label)}.`);
+    setToast(`Iconic. You're on ${lowerFirst(label)}.`);
     router.refresh();
   }
 
@@ -169,7 +169,7 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
     const { [id]: _removed, ...rest } = tokens;
     void _removed;
     setMyTokens(rest);
-    setToast("No problem. It's back on the list.");
+    setToast("All good. It's back up for grabs.");
     router.refresh();
   }
 
@@ -187,7 +187,7 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
     setMyTokens({ ...tokens, [res.data.claimId]: res.data.editToken });
     rememberName(data.guestName);
     setPanel(null);
-    setToast(`Thanks! You're bringing ${lowerFirst(itemName)}.`);
+    setToast(`Iconic. You're on ${lowerFirst(itemName)}.`);
     router.refresh();
   }
 
@@ -230,7 +230,7 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
           </>
         ) : (
           <>
-            <span className="marker">Everything&apos;s covered.</span>
+            <span className="marker">The table is set.</span>
             <Sticker name="party" size={32} className="-mt-1.5 ml-1 align-middle" /> Just bring yourself.
           </>
         )}
