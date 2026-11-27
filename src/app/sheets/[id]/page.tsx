@@ -71,7 +71,7 @@ export default async function HostSheetPage({ params, searchParams }: Props) {
       )}
 
       <div className="mt-6">
-        <ShareTools url={url} title={sheet.title} />
+        <ShareTools url={url} />
       </div>
 
       <div className="mt-8 mb-5 flex items-end justify-between">

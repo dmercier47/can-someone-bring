@@ -652,7 +652,7 @@ function ClaimForm({
           className={inputCls}
           value={detail}
           onChange={(e) => setDetail(e.target.value)}
-          placeholder={slot.note ?? `e.g. my famous ${lowerFirst(slot.name).replace(/^an? /, "")}`}
+          placeholder={slot.note ?? "Brand, flavor, anything specific"}
         />
       </label>
       <NameAndDiet name={name} setName={setName} diet={diet} setDiet={setDiet} />
@@ -693,7 +693,7 @@ function CustomForm({
     >
       <label className="block">
         <span className={ui.label}>What are you bringing?</span>
-        <input className={inputCls} value={item} onChange={(e) => setItem(e.target.value)} placeholder="e.g. cranberry sauce" required />
+        <input className={inputCls} value={item} onChange={(e) => setItem(e.target.value)} placeholder="e.g. a bottle of orange wine" required />
       </label>
       {similar && (
         <p className="border-l-2 border-accent pl-3 text-[14px] leading-snug text-ink/80">

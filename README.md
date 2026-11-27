@@ -9,7 +9,7 @@
 <p align="center">
   <img src="docs/guest.jpg" width="250" alt="Guest signup page: a sentence header listing what's still needed, a big '11 still needed' count, and colorful stacked category cards" />
   &nbsp;
-  <img src="docs/host.jpg" width="250" alt="Host party page with a 'Copy for Partiful' button and the list of who's bringing what" />
+  <img src="docs/host.jpg" width="250" alt="Host party page with a Copy link button and the list of who's bringing what" />
   &nbsp;
   <img src="docs/editor.jpg" width="250" alt="List editor with editable items, quantity steppers and colored category cards" />
 </p>
@@ -37,7 +37,7 @@ Signup Genius is built for PTAs and volunteer shifts; Partiful nails invites and
 - Dashboard of upcoming and past parties
 - New party from a template, with a live preview of what guests will see
 - List editor: rename, add, remove, reorder, quantities, per-category color and sticker
-- Party page with **Copy for Partiful**, share sheet, dietary notes, and who's bringing what
+- Party page with a one-tap **Copy link** for the Partiful invite, dietary notes, and who's bringing what
 
 ## Tech
 

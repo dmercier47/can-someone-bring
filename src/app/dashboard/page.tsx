@@ -29,9 +29,8 @@ export default async function Dashboard() {
 
       {sheets.length === 0 ? (
         <div className="mt-8 border-l-2 border-accent pl-5">
-          <Sticker name="party" size={56} />
-          <p className="mt-3 font-display text-[24px]">Nothing planned yet.</p>
-          <p className="mt-1 text-[15px] text-muted">Make a list, paste the link into your Partiful invite, and let friends claim what they&apos;re bringing.</p>
+          <p className="font-display text-[24px]">Nothing planned yet.</p>
+          <p className="mt-1 text-[15px] text-muted">Make a list, paste the link into your Partiful invite, and let your people claim what they&apos;re bringing.</p>
           <Link href="/new" className={`${ui.pill} mt-6`}>
             <PlusIcon size={18} />
             Plan a party

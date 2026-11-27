@@ -139,7 +139,7 @@ export default function NewSheetForm({ defaultName }: { defaultName: string }) {
                 name="hostNote"
                 rows={3}
                 className={`${ui.input} resize-none`}
-                placeholder="I've got the turkey covered! Grab anything below."
+                placeholder="I'm making a big pot of pasta. Grab anything below."
                 maxLength={500}
               />
             </label>
