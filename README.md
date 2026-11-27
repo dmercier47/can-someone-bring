@@ -37,7 +37,7 @@ Signup Genius is built for PTAs and volunteer shifts; Partiful nails invites and
 - Dashboard of upcoming and past parties
 - New party from a template, with a live preview of what guests will see
 - List editor: rename, add, remove, reorder, quantities, per-category color and sticker
-- Party page with a one-tap **Copy link** for the Partiful invite, dietary notes, and who's bringing what
+- Party page with a one-tap **Copy sign-up link** for the Partiful invite, dietary notes, and who's bringing what
 
 ## Tech
 

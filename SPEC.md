@@ -48,7 +48,7 @@ Tasteful and refined, but approachable and friendly. Deliberately avoids common 
 - **Start from a template**: Start from scratch (default), Dinner party, Park hang, House party, Pregame. Templates list only what a guest would happily bring (about 10 spots or fewer). Seasonal ones (e.g. Friendsgiving) can come back in season.
 - **Edit items**: categories (e.g. Mains, Sides, Desserts, Drinks, Supplies, Help) containing slots. A slot has a name, optional quantity ("Sides ×4" = 4 claimable spots), optional note.
 - Toggle "guests can add their own items" (default on).
-- **Share**: short link (`/s/k3x9ab`) with one "Copy link" button and a one-line how-to ("Paste it into your Partiful event description"). One option only, so there's nothing to decode.
+- **Share**: short link (`/s/k3x9ab`) with one "Copy sign-up link" button and nothing else (no visible URL, no how-to). One option only, so there's nothing to decode.
 - **Host board**: live view of covered vs. open, who's bringing what, dietary notes. "Copy nudge message" for open items.
 - Dashboard listing the host's sheets (upcoming / past). Duplicate a past sheet.
 
