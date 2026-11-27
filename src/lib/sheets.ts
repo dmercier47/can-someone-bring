@@ -2,9 +2,9 @@ import "server-only";
 import { supabaseAdmin } from "./supabase/admin";
 import { supabaseServer } from "./supabase/server";
 import { guessSticker, isSticker, type StickerKey } from "./stickers";
-import { CATEGORY_COLORS, type CategoryColor, type Sheet } from "./types";
+import { CATEGORY_COLORS, takenCount, type CategoryColor, type Sheet } from "./types";
 
-type ClaimRow = { id: string; guest_name: string; detail: string | null; dietary_note: string | null; created_at: string };
+type ClaimRow = { id: string; guest_name: string; quantity: number; detail: string | null; dietary_note: string | null; created_at: string };
 type SlotRow = {
   id: string;
   name: string;
@@ -42,7 +42,7 @@ function color(c: string | null): CategoryColor | undefined {
 const SHEET_SELECT = `id, slug, title, host_name, starts_at, time_zone, location, host_note, partiful_url, allow_guest_items,
   categories ( id, name, sticker, color, position,
     slots ( id, name, quantity, note, sticker, position, created_by_guest, created_at,
-      claims ( id, guest_name, detail, dietary_note, created_at ) ) )`;
+      claims ( id, guest_name, quantity, detail, dietary_note, created_at ) ) )`;
 
 /** Public view of a sheet for the guest page (server key; anyone with the link). */
 export async function getSheetBySlug(slug: string): Promise<Sheet | null> {
@@ -66,11 +66,11 @@ export async function listHostSheets() {
   const supabase = await supabaseServer();
   const { data, error } = await supabase
     .from("sheets")
-    .select("id, slug, title, starts_at, time_zone, location, categories ( sticker, position, slots ( quantity, claims ( id ) ) )")
+    .select("id, slug, title, starts_at, time_zone, location, categories ( sticker, position, slots ( quantity, claims ( quantity ) ) )")
     .order("starts_at", { ascending: true })
     .returns<
       { id: string; slug: string; title: string; starts_at: string; time_zone: string; location: string | null;
-        categories: { sticker: string; position: number; slots: { quantity: number; claims: { id: string }[] }[] }[] }[]
+        categories: { sticker: string; position: number; slots: { quantity: number; claims: { quantity: number }[] }[] }[] }[]
     >();
   if (error) throw error;
   return data.map((s) => {
@@ -84,8 +84,8 @@ export async function listHostSheets() {
       timeZone: s.time_zone,
       location: s.location ?? undefined,
       sticker: (isSticker(first?.sticker) ? first.sticker : "party") as StickerKey,
-      needed: slots.reduce((n, sl) => n + Math.max(0, sl.quantity - sl.claims.length), 0),
-      claimed: slots.reduce((n, sl) => n + sl.claims.length, 0),
+      needed: slots.reduce((n, sl) => n + Math.max(0, sl.quantity - takenCount(sl.claims)), 0),
+      claimed: slots.reduce((n, sl) => n + takenCount(sl.claims), 0),
     };
   });
 }
@@ -127,6 +127,7 @@ function mapSheet(data: SheetRow): Sheet {
         id: cl.id,
         slotId: cl.slotId,
         guestName: cl.guest_name,
+        quantity: cl.quantity,
         detail: cl.detail ?? undefined,
         dietaryNote: cl.dietary_note ?? undefined,
       })),

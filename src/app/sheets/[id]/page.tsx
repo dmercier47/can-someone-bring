@@ -28,7 +28,7 @@ export default async function HostSheetPage({ params, searchParams }: Props) {
 
   const slots = sheet.categories.flatMap((c) => c.slots);
   const claimed = new Map<string, number>();
-  for (const c of sheet.claims) claimed.set(c.slotId, (claimed.get(c.slotId) ?? 0) + 1);
+  for (const c of sheet.claims) claimed.set(c.slotId, (claimed.get(c.slotId) ?? 0) + c.quantity);
   const needed = slots.reduce((n, s) => n + Math.max(0, s.quantity - (claimed.get(s.id) ?? 0)), 0);
   const diets = sheet.claims.filter((c) => c.dietaryNote);
 
@@ -79,7 +79,7 @@ export default async function HostSheetPage({ params, searchParams }: Props) {
           <span className="text-[60px] leading-[0.75] tracking-[-0.04em] tabular-nums">{needed}</span>
           <span className="text-[14px] text-muted">still needed</span>
         </p>
-        <p className="text-[13px] text-muted">{sheet.claims.length} claimed</p>
+        <p className="text-[13px] text-muted">{sheet.claims.reduce((n, c) => n + c.quantity, 0)} claimed</p>
       </div>
 
       {diets.length > 0 && (

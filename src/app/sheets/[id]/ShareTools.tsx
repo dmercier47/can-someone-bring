@@ -38,20 +38,20 @@ export default function ShareTools({ url, title }: { url: string; title: string 
         {copied === "partiful" ? "Copied. Paste it into Partiful" : "Copy for Partiful"}
       </button>
       <div className="mt-2 grid grid-cols-2 gap-2">
-        <button onClick={() => copy(url, "link")} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-hair text-[14px] text-ink">
+        <button onClick={() => copy(url, "link")} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-full border border-hair text-[14px] text-ink">
           {copied === "link" ? <CheckIcon size={16} /> : <LinkIcon size={16} />}
           {copied === "link" ? "Copied" : "Copy link"}
         </button>
         {canShare ? (
           <button
             onClick={() => navigator.share({ title, text: partifulText.replace(` ${url}`, ""), url }).catch(() => {})}
-            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-hair text-[14px] text-ink"
+            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-full border border-hair text-[14px] text-ink"
           >
             <ShareIcon size={16} />
             Share
           </button>
         ) : (
-          <a href={url} target="_blank" rel="noreferrer" className="inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-hair text-[14px] text-ink">
+          <a href={url} target="_blank" rel="noreferrer" className="inline-flex h-11 items-center justify-center gap-1.5 rounded-full border border-hair text-[14px] text-ink">
             Guest view
             <ArrowUpRightIcon size={16} />
           </a>

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { deleteCategory, reorderCategories, saveCategory, type DraftCategory } from "./actions";
-import { categoryColor, type Category, type Claim } from "@/lib/types";
+import { categoryColor, takenCount, type Category, type Claim } from "@/lib/types";
 import { guessSticker, isSticker } from "@/lib/stickers";
 import { uuid } from "@/lib/uuid";
 import Sticker from "@/components/Sticker";
@@ -34,7 +34,7 @@ export default function HostBoard({ sheetId, categories, claims }: Props) {
 
   const claimsBySlot = new Map<string, Claim[]>();
   for (const c of claims) claimsBySlot.set(c.slotId, [...(claimsBySlot.get(c.slotId) ?? []), c]);
-  const claimCount = (slotId: string) => claimsBySlot.get(slotId)?.length ?? 0;
+  const claimCount = (slotId: string) => takenCount(claimsBySlot.get(slotId) ?? []);
 
   const byId = new Map(categories.map((c) => [c.id, c]));
   const ordered = order.map((id) => byId.get(id)).filter(Boolean) as Category[];
@@ -171,8 +171,11 @@ function BandView({ cat, claimsBySlot, onEdit }: { cat: Category; claimsBySlot: 
       <ul>
         {cat.slots.map((slot) => {
           const cl = claimsBySlot.get(slot.id) ?? [];
-          const open = slot.quantity - cl.length;
-          const who = cl.map((c) => (c.detail ? `${c.guestName}: ${c.detail}` : c.guestName));
+          const open = slot.quantity - takenCount(cl);
+          const who = cl.map((c) => {
+            const person = c.quantity > 1 ? `${c.guestName} ×${c.quantity}` : c.guestName;
+            return c.detail ? `${person}: ${c.detail}` : person;
+          });
           const sub = [...(slot.quantity > 1 ? [`${slot.quantity} needed`] : []), ...who, ...(slot.createdByGuest ? ["added by a guest"] : [])].join(" · ");
           return (
             <li key={slot.id} className="flex min-h-14 items-center gap-3 border-t border-cat-hair py-2.5">

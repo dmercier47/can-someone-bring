@@ -28,6 +28,8 @@ export type Claim = {
   id: string;
   slotId: string;
   guestName: string;
+  /** How many spots on the item this claim covers (one person can bring 2 bottles) */
+  quantity: number;
   /** What exactly they're bringing, e.g. "mac & cheese" */
   detail?: string;
   dietaryNote?: string;
@@ -52,4 +54,9 @@ export type Sheet = {
 
 export function categoryColor(category: { color?: CategoryColor }, index: number): CategoryColor {
   return category.color ?? CATEGORY_COLORS[index % CATEGORY_COLORS.length];
+}
+
+/** Spots taken on a slot: claims can cover more than one each. */
+export function takenCount(claims: { quantity: number }[]): number {
+  return claims.reduce((n, c) => n + c.quantity, 0);
 }

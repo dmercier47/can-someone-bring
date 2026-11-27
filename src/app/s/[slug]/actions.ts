@@ -5,7 +5,7 @@ import { supabaseAdmin } from "@/lib/supabase/admin";
 
 export type ActionResult<T> = { ok: true; data: T } | { ok: false; error: string };
 
-type GuestInput = { guestName: string; detail?: string; dietaryNote?: string };
+type GuestInput = { guestName: string; detail?: string; dietaryNote?: string; quantity?: number };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const SLUG = /^[a-z0-9-]{3,40}$/;
@@ -18,7 +18,7 @@ function clean(s: unknown, max: number): string | undefined {
 }
 
 function friendly(message: string): string {
-  if (message.includes("slot_full")) return "Someone beat you to it. Pick another?";
+  if (message.includes("slot_full")) return "Someone beat you to it. Pick another, or bring fewer?";
   if (message.includes("not_found")) return "That item isn't on this sheet anymore.";
   return "Something went wrong. Try again?";
 }
@@ -31,9 +31,12 @@ export async function claimSlot(
   const guestName = clean(input.guestName, 60);
   if (!SLUG.test(slug) || !UUID.test(slotId)) return { ok: false, error: "That item isn't on this sheet anymore." };
   if (!guestName) return { ok: false, error: "Add your name so the host knows who's bringing it." };
+  const count = Number.isInteger(input.quantity) ? (input.quantity as number) : 1;
+  if (count < 1 || count > 50) return { ok: false, error: "Pick how many you're bringing." };
 
   const { data, error } = await supabaseAdmin()
     .rpc("claim_slot", {
+      p_count: count,
       p_slug: slug,
       p_slot_id: slotId,
       p_guest_name: guestName,

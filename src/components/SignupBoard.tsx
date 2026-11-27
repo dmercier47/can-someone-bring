@@ -2,11 +2,11 @@
 
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { categoryColor, type Category, type CategoryColor, type Claim, type Sheet, type Slot } from "@/lib/types";
+import { categoryColor, takenCount, type Category, type CategoryColor, type Claim, type Sheet, type Slot } from "@/lib/types";
 import type { StickerKey } from "@/lib/stickers";
 import { addGuestItem, claimSlot, dropClaim as dropClaimAction } from "@/app/s/[slug]/actions";
 import Sticker from "./Sticker";
-import { CloseIcon, PlusIcon } from "./icons";
+import { CloseIcon, MinusIcon, PlusIcon } from "./icons";
 import { ui } from "./ui";
 import { useVisualViewport } from "@/lib/useVisualViewport";
 
@@ -107,7 +107,7 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
     return m;
   }, [claims]);
 
-  const openCount = (s: Slot) => Math.max(0, s.quantity - (claimsBySlot.get(s.id)?.length ?? 0));
+  const openCount = (s: Slot) => Math.max(0, s.quantity - takenCount(claimsBySlot.get(s.id) ?? []));
   const allSlots = categories.flatMap((c) => c.slots);
   const stillNeeded = allSlots.reduce((n, s) => n + openCount(s), 0);
   const myClaims = claims.filter((c) => mine.includes(c.id));
@@ -117,7 +117,7 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
   const asks = useMemo(() => {
     const queues = categories.map((c, idx) =>
       c.slots
-        .filter((s) => s.quantity - (claimsBySlot.get(s.id)?.length ?? 0) > 0)
+        .filter((s) => s.quantity - takenCount(claimsBySlot.get(s.id) ?? []) > 0)
         .map((s) => ({ slot: s, cat: c, color: categoryColor(c, idx) })),
     );
     const out: { slot: Slot; sticker: StickerKey; color: CategoryColor }[] = [];
@@ -136,7 +136,11 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
     } catch {}
   }
 
-  async function addClaim(slotId: string, data: { guestName: string; detail?: string; dietaryNote?: string }, label: string) {
+  async function addClaim(
+    slotId: string,
+    data: { guestName: string; detail?: string; dietaryNote?: string; quantity: number },
+    label: string,
+  ) {
     setBusy(true);
     const res = await claimSlot(sheet.slug, slotId, data);
     setBusy(false);
@@ -151,7 +155,7 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
     setMyTokens({ ...tokens, [claim.id]: res.data.editToken });
     rememberName(data.guestName);
     setPanel(null);
-    setToast(`Iconic. You're on ${lowerFirst(label)}.`);
+    setToast(`Iconic. You're on ${lowerFirst(label)}${data.quantity > 1 ? ` (${data.quantity})` : ""}.`);
     router.refresh();
   }
 
@@ -183,7 +187,7 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
     }
     const slot: Slot = { id: res.data.slotId, name: itemName, quantity: 1, createdByGuest: true };
     setCategories((cats) => cats.map((c) => (c.id === categoryId ? { ...c, slots: [...c.slots, slot] } : c)));
-    setClaims((cs) => [...cs, { id: res.data.claimId, slotId: slot.id, ...data }]);
+    setClaims((cs) => [...cs, { id: res.data.claimId, slotId: slot.id, quantity: 1, ...data }]);
     setMyTokens({ ...tokens, [res.data.claimId]: res.data.editToken });
     rememberName(data.guestName);
     setPanel(null);
@@ -350,6 +354,7 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
               busy={busy}
               key={panel.slot.id}
               slot={panel.slot}
+              open={openCount(panel.slot)}
               defaultName={name}
               onSubmit={(d) => addClaim(panel.slot.id, d, d.detail || panel.slot.name)}
             />
@@ -381,13 +386,13 @@ function SlotRow({
   onClaim: () => void;
   onDrop: (id: string) => void;
 }) {
-  const open = slot.quantity - claims.length;
+  const open = slot.quantity - takenCount(claims);
   const full = open <= 0;
   const myClaim = claims.find((c) => mine.includes(c.id));
 
   // Second line: who's on it (and what), how many are left, or the host's note.
   const who = claims.map((c) => {
-    const person = mine.includes(c.id) ? "You" : c.guestName;
+    const person = `${mine.includes(c.id) ? "You" : c.guestName}${c.quantity > 1 ? ` ×${c.quantity}` : ""}`;
     return c.detail ? `${person}: ${lowerFirst(c.detail)}` : person;
   });
   const sub = [
@@ -406,7 +411,7 @@ function SlotRow({
 
       {myClaim ? (
         <span className="flex shrink-0 items-center gap-2">
-          <span className="text-[13px] text-cat-muted">You</span>
+          <span className="text-[13px] text-cat-muted">{myClaim.quantity > 1 ? `You ×${myClaim.quantity}` : "You"}</span>
           <button onClick={() => onDrop(myClaim.id)} className="h-9 rounded-full border border-cat-hair px-3.5 text-[13px]">
             Undo
           </button>
@@ -582,15 +587,19 @@ function SubmitButton({ children, disabled, busy }: { children: React.ReactNode;
 
 function ClaimForm({
   slot,
+  open,
   defaultName,
   busy,
   onSubmit,
 }: {
   slot: Slot;
+  /** Spots still open on this item; guests can take more than one. */
+  open: number;
   defaultName: string;
   busy: boolean;
-  onSubmit: (d: { guestName: string; detail?: string; dietaryNote?: string }) => void;
+  onSubmit: (d: { guestName: string; detail?: string; dietaryNote?: string; quantity: number }) => void;
 }) {
+  const [count, setCount] = useState(1);
   const [name, setName] = useState(defaultName);
   const [detail, setDetail] = useState("");
   const [diet, setDiet] = useState("");
@@ -601,9 +610,39 @@ function ClaimForm({
       onSubmit={(e) => {
         e.preventDefault();
         if (!name.trim()) return;
-        onSubmit({ guestName: name.trim(), detail: detail.trim() || undefined, dietaryNote: diet.trim() || undefined });
+        onSubmit({ guestName: name.trim(), detail: detail.trim() || undefined, dietaryNote: diet.trim() || undefined, quantity: count });
       }}
     >
+      {open > 1 && (
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-[15px]">
+            How many?<span className="text-muted"> {open} still needed</span>
+          </span>
+          <div className="flex h-11 shrink-0 items-center rounded-xl border border-hair bg-surface" role="group" aria-label="How many">
+            <button
+              type="button"
+              onClick={() => setCount((n) => Math.max(1, n - 1))}
+              disabled={count <= 1}
+              className="grid h-11 w-11 place-items-center disabled:opacity-25"
+              aria-label="Fewer"
+            >
+              <MinusIcon size={16} />
+            </button>
+            <span className="w-6 text-center text-[16px] tabular-nums" aria-live="polite">
+              {count}
+            </span>
+            <button
+              type="button"
+              onClick={() => setCount((n) => Math.min(open, n + 1))}
+              disabled={count >= open}
+              className="grid h-11 w-11 place-items-center disabled:opacity-25"
+              aria-label="More"
+            >
+              <PlusIcon size={16} />
+            </button>
+          </div>
+        </div>
+      )}
       <label className="block">
         <span className={ui.label}>
           What exactly? (optional)
@@ -616,7 +655,9 @@ function ClaimForm({
         />
       </label>
       <NameAndDiet name={name} setName={setName} diet={diet} setDiet={setDiet} />
-      <SubmitButton busy={busy} disabled={!name.trim()}>I&apos;m bringing it</SubmitButton>
+      <SubmitButton busy={busy} disabled={!name.trim()}>
+        {count > 1 ? `I'm bringing ${count}` : "I'm bringing it"}
+      </SubmitButton>
     </form>
   );
 }
@@ -669,8 +710,8 @@ function CustomForm({
                 key={c.id}
                 onClick={() => setCatId(c.id)}
                 aria-pressed={active}
-                className={`flex h-11 items-center gap-1.5 rounded-xl border pr-3.5 pl-2 text-[14px] text-cat-ink transition ${
-                  active ? `${CARD_BG[categoryColor(c, i)]} border-cat-ink` : "border-hair bg-surface"
+                className={`flex h-11 items-center gap-1.5 rounded-xl border pr-3.5 pl-2 text-[14px] transition ${
+                  active ? `${CARD_BG[categoryColor(c, i)]} border-cat-ink text-cat-ink` : "border-hair bg-surface text-ink"
                 }`}
               >
                 <Sticker name={c.sticker} size={26} />
