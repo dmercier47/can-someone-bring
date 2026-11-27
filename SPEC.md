@@ -18,7 +18,7 @@ Everything about the product should serve that flow: the host's job is fast setu
 - **Guests never make an account.** Name is required; phone/email optional (for reminders and recovery).
 - **Fast.** Guest page should be usable in under a second on 4G. Minimal JS on the guest page.
 - **Looks good when shared.** Every sheet link has a rich preview (Open Graph image with title + date).
-- **Friendly, not corporate.** Casual copy ("Someone's on dessert 🎉"), warm visual style.
+- **Exclusive, not corporate.** Hot-girl New York, queer and alt-leaning: confident, in-the-know copy ("Iconic. You're on the olives."), curated examples, warm visual style. Exclusive in tone, never in friction.
 
 ## Visual identity: "Bands"
 
