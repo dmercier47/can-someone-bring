@@ -48,7 +48,7 @@ export default function PartyMenu({ sheetId, guestUrl, details }: { sheetId: str
       </button>
 
       {open && (
-        <div role="menu" className="animate-fade-in absolute top-12 right-0 z-30 w-60 overflow-hidden rounded-[16px] border border-hair bg-surface py-1.5 shadow-[0_12px_32px_rgba(26,23,20,0.14)]">
+        <div role="menu" className="animate-fade-in absolute top-12 right-0 z-30 w-60 overflow-hidden rounded-[16px] border border-hair bg-surface py-1.5 shadow-[0_12px_32px_rgba(0,0,0,0.5)]">
           <button
             role="menuitem"
             className={item}

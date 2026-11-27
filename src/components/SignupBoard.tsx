@@ -308,10 +308,10 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
       {/* Floating action: "something else", and what you're bringing once you've claimed */}
       {(sheet.allowGuestItems || myClaims.length > 0) && (
         <div className="animate-pop-in bottom-safe fixed left-1/2 z-20 w-[calc(100%-2rem)] max-w-[34rem] -translate-x-1/2">
-          <div className="flex min-h-14 items-center gap-3 rounded-2xl bg-pill py-2 pr-2 pl-5 text-pill-ink shadow-[0_8px_24px_rgba(26,23,20,0.22)]">
+          <div className="flex min-h-14 items-center gap-3 rounded-2xl bg-pill py-2 pr-2 pl-5 text-pill-ink shadow-[0_8px_24px_rgba(0,0,0,0.5)]">
             {myClaims.length > 0 ? (
               <p className="min-w-0 flex-1 leading-tight">
-                <span className="block text-[12px] text-white/60">You&apos;re bringing</span>
+                <span className="block text-[12px] text-pill-ink/60">You&apos;re bringing</span>
                 <span className="block truncate text-[15px]">{myClaims.map(claimLabel).join(", ")}</span>
               </p>
             ) : (
@@ -320,7 +320,7 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
             {sheet.allowGuestItems && (
               <button
                 onClick={() => setPanel({ kind: "custom" })}
-                className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent text-white active:scale-95"
+                className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent text-accent-ink active:scale-95"
                 aria-label="Bring something else"
               >
                 <PlusIcon size={20} strokeWidth={2.2} />
@@ -333,7 +333,7 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
       {toast && (
         <div
           role="status"
-          className="animate-fade-in fixed inset-x-0 top-4 z-50 mx-auto w-fit max-w-[90vw] rounded-xl bg-pill px-4 py-3 text-[14px] text-pill-ink shadow-[0_8px_24px_rgba(26,23,20,0.22)]"
+          className="animate-fade-in fixed inset-x-0 top-4 z-50 mx-auto w-fit max-w-[90vw] rounded-xl bg-pill px-4 py-3 text-[14px] text-pill-ink shadow-[0_8px_24px_rgba(0,0,0,0.5)]"
         >
           {toast}
         </div>
@@ -480,7 +480,7 @@ function BottomSheet({
       className="fixed inset-x-0 top-0 z-40 flex h-dvh items-end justify-center sm:items-center"
       style={visible ? { top: visible.top, height: visible.height } : undefined}
     >
-      <div className="animate-fade-in absolute inset-0 bg-black/40" onClick={onClose} aria-hidden />
+      <div className="animate-fade-in absolute inset-0 bg-black/60" onClick={onClose} aria-hidden />
       <div
         ref={ref}
         role="dialog"

@@ -86,10 +86,10 @@ export default async function Dashboard() {
       {sheets.length > 0 && (
         <Link
           href="/new"
-          className="bottom-safe fixed left-1/2 z-20 flex min-h-14 w-[calc(100%-2rem)] max-w-[34rem] -translate-x-1/2 items-center justify-between gap-3 rounded-2xl bg-pill py-2 pr-2 pl-5 text-[15px] text-pill-ink shadow-[0_8px_24px_rgba(26,23,20,0.22)]"
+          className="bottom-safe fixed left-1/2 z-20 flex min-h-14 w-[calc(100%-2rem)] max-w-[34rem] -translate-x-1/2 items-center justify-between gap-3 rounded-2xl bg-pill py-2 pr-2 pl-5 text-[15px] text-pill-ink shadow-[0_8px_24px_rgba(0,0,0,0.5)]"
         >
           Plan a new party
-          <span className="grid size-10 place-items-center rounded-xl bg-accent text-white">
+          <span className="grid size-10 place-items-center rounded-xl bg-accent text-accent-ink">
             <PlusIcon size={20} strokeWidth={2.2} />
           </span>
         </Link>

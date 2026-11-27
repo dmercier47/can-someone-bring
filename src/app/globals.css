@@ -1,39 +1,40 @@
 @import "tailwindcss";
 
 /*
-  Visual identity: "Bands" — warm paper, near-black ink, soft category tints as full-width bands,
+  Visual identity: "Bands", After dark: near-black page, cream ink, bright category tints as full-width bands,
   hairline dividers instead of boxes-in-boxes, Hedvig Letters Serif (display) + Sans (text),
   Fluent 3D stickers as the only illustration, drawn line icons (src/components/icons.tsx).
   Radius scale: 12px (inputs, icon buttons), 20px (cards, sheets), pill only for actions.
   Use tokens via Tailwind: bg-bg, text-ink, text-faint, border-hair, bg-cat-yellow, bg-pill, etc.
 */
 :root {
-  --bg: #f7f3ec;
-  --surface: #ffffff;
-  --ink: #1a1714;
-  --muted: #776f65;
-  --faint: #b0a79b;
-  --line: #e7e0d4;
-  --hair: rgb(26 23 20 / 0.1);
-  --accent: #ff5a36;
+  /* "After dark": near-black page, cream type, bright category bands. Dark only (brand decision). */
+  --bg: #121011;
+  --surface: #1d1a1b;
+  --ink: #f4ede4;
+  --muted: #a39a90;
+  --faint: #8a8178; /* 5:1 on bg: still readable for placeholders and the dimmed headline words */
+  --line: #2c2829;
+  --hair: rgb(244 237 228 / 0.12);
+  --accent: #ff4d6d;
+  --accent-ink: #121011; /* text on accent (white on this red fails contrast) */
 
-  /* Category tints (names kept stable; values are the softer refined palette) */
-  --cat-ink: #1a1714;
-  --cat-hair: rgb(26 23 20 / 0.12);
-  --cat-muted: rgb(26 23 20 / 0.6);
-  --cat-yellow: #f6d36b; /* butter */
-  --cat-pink: #f3b4c4; /* rose */
-  --cat-blue: #a9c7f2; /* sky */
-  --cat-mint: #b7dcc3; /* sage */
-  --cat-tomato: #f0a084; /* clay */
+  /* Category bands stay bright with dark text on them */
+  --cat-ink: #121011;
+  --cat-hair: rgb(18 16 17 / 0.14);
+  --cat-muted: rgb(18 16 17 / 0.7);
+  --cat-yellow: #d7f25c; /* chartreuse */
+  --cat-pink: #ff8fb1; /* pink */
+  --cat-blue: #9db6ff; /* periwinkle */
+  --cat-mint: #8de0b5; /* mint */
+  --cat-tomato: #ff9a6b; /* tangerine */
 
-  /* Primary action */
-  --pill: #1a1714;
-  --pill-ink: #ffffff;
+  /* Primary action: cream pill on the dark page */
+  --pill: #f4ede4;
+  --pill-ink: #121011;
 }
 
-/* Light-only for now (brand decision). */
-:root { color-scheme: light; }
+:root { color-scheme: dark; }
 
 @theme inline {
   --color-bg: var(--bg);
@@ -44,6 +45,7 @@
   --color-line: var(--line);
   --color-hair: var(--hair);
   --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
   --color-cat-ink: var(--cat-ink);
   --color-cat-hair: var(--cat-hair);
   --color-cat-muted: var(--cat-muted);
@@ -70,10 +72,11 @@ body {
   color: var(--ink);
 }
 
-/* Signature detail: marker-pen highlight under open items, in their category color. */
+/* Signature detail: marker underline under open items, in their category color.
+   A thin band low on the line, so cream text stays readable on the dark page. */
 .marker {
   color: var(--ink);
-  background: linear-gradient(transparent 60%, var(--hl, var(--cat-yellow)) 60%, var(--hl, var(--cat-yellow)) 92%, transparent 92%);
+  background: linear-gradient(transparent 80%, var(--hl, var(--cat-yellow)) 80%, var(--hl, var(--cat-yellow)) 96%, transparent 96%);
   padding: 0 0.08em;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;

@@ -98,7 +98,7 @@ export function Sheet({
 
   return (
     <div className="fixed inset-0 z-40 flex items-end justify-center sm:items-center">
-      <div className="animate-fade-in absolute inset-0 bg-black/40" onClick={onClose} aria-hidden />
+      <div className="animate-fade-in absolute inset-0 bg-black/60" onClick={onClose} aria-hidden />
       <div
         role="dialog"
         aria-modal="true"

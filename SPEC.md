@@ -24,11 +24,11 @@ Everything about the product should serve that flow: the host's job is fast setu
 
 Tasteful and refined, but approachable and friendly. Deliberately avoids common AI-generated-UI tells.
 
-- **Light only**: warm paper (`#f7f3ec`), near-black ink, one hot accent (`#ff5a36`, the `?` in the wordmark).
+- **After dark, dark only**: near-black page (`#121011`), cream ink (`#f4ede4`), cream pill buttons, one hot accent (`#ff4d6d`, the `?` in the wordmark; dark text on it). Every text color meets 4.5:1 contrast.
 - **Type**: Hedvig Letters Serif for display (headline sentence, category names, page titles, wordmark) and Hedvig Letters Sans for everything else. Single weights; hierarchy from size, face and color, never faux bold.
-- **Header as a sentence**: "Sam's hosting Friendsgiving Saturday at 6pm. Can someone bring stuffing, a pie or cider?" Open items get a **marker-pen highlight in their category's color** (the signature detail) plus an inline sticker.
+- **Header as a sentence**: "Jules's hosting Sunday dinner at 7pm. Can someone bring tinned fish, natural wine or dessert?" Open items get a **neon marker underline in their category's color** (the signature detail) plus an inline sticker.
 - **Big number**: "11 still needed" (sans) plus guest initials.
-- **Category bands**: full-width soft tints on phones (rounded 20px cards on wider screens), items separated by hairlines, every band open in one scroll. Default palette by position: butter, rose, sky, sage, clay; hosts may override per category.
+- **Category bands**: full-width bright bands with dark text on phones (rounded 20px cards on wider screens), items separated by hairlines, every band open in one scroll. Default palette by position: chartreuse, pink, periwinkle, mint, tangerine; hosts may override per category.
 - **Stickers**: Microsoft Fluent 3D emoji (MIT), the only illustration. Everything else uses drawn line icons (`src/components/icons.tsx`).
 - **Shape**: radius 12px (inputs, icon buttons), 20px (cards, sheets), pills only for actions.
 - **Copy**: warm and plain; "·" separators, no em dashes, no emoji in UI text.

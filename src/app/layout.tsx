@@ -16,7 +16,7 @@ export const viewport: Viewport = {
   viewportFit: "cover",
   // Android Chrome: shrink the page when the keyboard opens (iOS is handled by useVisualViewport).
   interactiveWidget: "resizes-content",
-  themeColor: "#f7f3ec",
+  themeColor: "#121011",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
