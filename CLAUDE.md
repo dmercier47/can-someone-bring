@@ -3,6 +3,7 @@
 Signup sheets for dinner parties and house parties, shared via a link in a Partiful invite.
 
 - Read `SPEC.md` first: product flow, v1 scope, data model, build order.
+- Agents: `.claude/agents/` (product-manager, customer, tech-lead, engineer, qa, pr-reviewer). `/ship` runs one change through them in order. Backlog: `docs/ROADMAP.md`; plans: `docs/plans/`.
 - Stack: Next.js 15 (App Router) + TypeScript + Tailwind v4 + Supabase (hosted). Email: Supabase Auth sends through Resend SMTP from `hello@mail.cansomeonebring.com`; `RESEND_API_KEY` (sending-only, domain-scoped) is in Vercel + `.env.local` for future app emails.
 - Database: SQL migrations in `supabase/migrations/` (append new numbered files, never edit applied ones). `npm run db:migrate` applies them, `npm run db:seed` resets the demo sheet at `/s/demo`. Both use `DATABASE_URL` from `.env.local` (see `.env.example`). No Docker/Supabase CLI.
 - Security model: RLS on every table; the browser (anon/publishable key) gets no table access. Guest reads/writes go through server code (`src/lib/sheets.ts`, `src/app/s/[slug]/actions.ts`) using the secret key in `src/lib/supabase/admin.ts` (server-only). Never send `edit_token` or `guest_email` to the client except a guest's own token right after they claim. New Supabase projects don't auto-grant table privileges: add explicit `grant`s for new tables (see `0002_grants.sql`).
