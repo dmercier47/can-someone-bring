@@ -488,6 +488,18 @@ function SlotRow({
   );
 }
 
+/**
+ * Scrolls only the sheet so `el` (plus its helper text below) is in view. scrollIntoView would also
+ * scroll the page behind the sheet on iOS, which then shows through the see-through AutoFill bar.
+ */
+function revealInSheet(el: HTMLElement, sheet: HTMLElement) {
+  const margin = 56;
+  const box = el.getBoundingClientRect();
+  const view = sheet.getBoundingClientRect();
+  if (box.bottom + margin > view.bottom) sheet.scrollTop += box.bottom + margin - view.bottom;
+  else if (box.top - 16 < view.top) sheet.scrollTop -= view.top - (box.top - 16);
+}
+
 function BottomSheet({
   title,
   sticker,
@@ -507,13 +519,17 @@ function BottomSheet({
   const visible = useVisualViewport();
 
   useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    // Pin the page in place (overflow alone doesn't stop iOS scrolling it toward a focused field).
+    const body = document.body.style;
+    const prev = { overflow: body.overflow, position: body.position, top: body.top, width: body.width };
+    const y = window.scrollY;
+    Object.assign(body, { overflow: "hidden", position: "fixed", top: `-${y}px`, width: "100%" });
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && closeRef.current();
     window.addEventListener("keydown", onKey);
     ref.current?.querySelector<HTMLElement>("input")?.focus({ preventScroll: true });
     return () => {
-      document.body.style.overflow = prev;
+      Object.assign(body, prev);
+      window.scrollTo(0, y);
       window.removeEventListener("keydown", onKey);
     };
   }, []);
@@ -521,9 +537,7 @@ function BottomSheet({
   // When a field gets focus (or the keyboard finishes opening), keep it visible inside the sheet.
   useEffect(() => {
     const el = document.activeElement;
-    if (visible?.keyboardOpen && el instanceof HTMLElement && ref.current?.contains(el)) {
-      el.scrollIntoView({ block: "nearest" });
-    }
+    if (visible?.keyboardOpen && el instanceof HTMLElement && ref.current) revealInSheet(el, ref.current);
   }, [visible?.height, visible?.keyboardOpen]);
 
   return (
@@ -535,7 +549,7 @@ function BottomSheet({
       <div className="animate-fade-in absolute inset-0 bg-black/60" onClick={onClose} aria-hidden />
       {/* iOS draws the AutoFill bar and Safari's address pill see-through below the visible area.
           Fill that strip with the sheet color so the page doesn't show through between sheet and keyboard. */}
-      {visible?.keyboardOpen && <div className="absolute inset-x-0 top-full h-[100lvh] bg-bg" aria-hidden />}
+      <div className="absolute inset-x-0 top-full h-[100lvh] bg-bg" aria-hidden />
       <div
         ref={ref}
         role="dialog"
@@ -544,9 +558,9 @@ function BottomSheet({
         onFocus={(e) => {
           const target = e.target;
           // Wait for the keyboard to start opening before scrolling.
-          setTimeout(() => target.scrollIntoView({ block: "nearest" }), 300);
+          setTimeout(() => ref.current && revealInSheet(target, ref.current), 300);
         }}
-        className={`animate-sheet-up relative w-full max-w-xl overflow-y-auto overscroll-contain rounded-t-[24px] bg-bg px-5 pt-3 shadow-2xl sm:rounded-[24px] sm:pb-6 [&_input]:scroll-mb-6 ${
+        className={`animate-sheet-up relative w-full max-w-xl overflow-y-auto overscroll-contain rounded-t-[24px] bg-bg px-5 pt-3 shadow-2xl sm:rounded-[24px] sm:pb-6 ${
           visible?.keyboardOpen ? "pb-4" : "pb-safe"
         }`}
         style={{ maxHeight: visible ? visible.height - 12 : "90dvh" }}
