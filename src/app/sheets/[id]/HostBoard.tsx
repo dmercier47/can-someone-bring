@@ -40,7 +40,8 @@ export default function HostBoard({ sheetId, categories, claims }: Props) {
   const ordered = order.map((id) => byId.get(id)).filter(Boolean) as Category[];
 
   function startEditing(cat: Category | null) {
-    if (editing?.dirty && !confirm("Discard your unsaved changes to this category?")) return;
+    // No browser pop-ups (iOS can silently block them): ask in the open band instead.
+    if (editing?.dirty) return setError("Save or cancel this category first.");
     setError(null);
     setEditing(
       cat
@@ -50,7 +51,6 @@ export default function HostBoard({ sheetId, categories, claims }: Props) {
   }
 
   function cancel() {
-    if (editing?.dirty && !confirm("Discard your unsaved changes?")) return;
     setEditing(null);
     setError(null);
   }
@@ -65,10 +65,8 @@ export default function HostBoard({ sheetId, categories, claims }: Props) {
     router.refresh();
   }
 
+  // BandEditor asks for a second tap before calling this.
   async function remove(cat: DraftCategory) {
-    const n = cat.slots.reduce((sum, s) => sum + claimCount(s.id), 0);
-    const msg = n > 0 ? `Remove “${cat.name}” and its ${n} claim${n === 1 ? "" : "s"}?` : `Remove “${cat.name || "this category"}”?`;
-    if (!confirm(msg)) return;
     setSaving(true);
     const res = await deleteCategory(sheetId, cat.id);
     setSaving(false);
@@ -247,10 +245,25 @@ function BandEditor({
     onChange({ ...d, slots: [...d.slots, { id, name: "", quantity: 1 }] });
   }
 
-  function removeSlot(id: string, name: string) {
-    const n = claimCount(id);
-    if (n > 0 && !confirm(`${n === 1 ? "Someone has" : `${n} people have`} claimed “${name}”. Remove it anyway?`)) return;
+  // Destructive taps need a second tap instead of a browser pop-up. `armed` is what the next tap confirms.
+  const [armed, setArmed] = useState<string | null>(null);
+  useEffect(() => {
+    if (!armed) return;
+    const t = setTimeout(() => setArmed(null), 4000);
+    return () => clearTimeout(t);
+  }, [armed]);
+
+  function removeSlot(id: string) {
+    if (claimCount(id) > 0 && armed !== `slot-${id}`) return setArmed(`slot-${id}`);
+    setArmed(null);
     onChange({ ...d, slots: d.slots.filter((s) => s.id !== id) });
+  }
+
+  const totalClaims = d.slots.reduce((n, s) => n + claimCount(s.id), 0);
+  function deleteBand() {
+    if (armed !== "band") return setArmed("band");
+    setArmed(null);
+    onDelete?.();
   }
 
   return (
@@ -324,10 +337,16 @@ function BandEditor({
                 aria-label="Item name"
                 enterKeyHint="next"
               />
-              {claimCount(slot.id) > 0 && <span className="pb-1 text-[12px] text-cat-muted">{claimCount(slot.id)} claimed</span>}
+              {claimCount(slot.id) > 0 && (
+                <span className="pb-1 text-[12px] text-cat-muted" aria-live="polite">
+                  {armed === `slot-${slot.id}`
+                    ? `Tap × again to remove it and ${claimCount(slot.id)} claim${claimCount(slot.id) === 1 ? "" : "s"}`
+                    : `${claimCount(slot.id)} claimed`}
+                </span>
+              )}
             </div>
             <Stepper value={slot.quantity} onChange={(q) => setSlot(slot.id, { quantity: q })} />
-            <IconButton label={`Remove ${slot.name || "item"}`} onClick={() => removeSlot(slot.id, slot.name)}>
+            <IconButton label={`Remove ${slot.name || "item"}`} onClick={() => removeSlot(slot.id)}>
               <CloseIcon size={17} />
             </IconButton>
           </li>
@@ -344,9 +363,15 @@ function BandEditor({
 
       <div className="mt-3 flex items-center gap-2 border-t border-cat-hair pt-3">
         {onDelete && (
-          <button type="button" onClick={onDelete} disabled={saving} className="flex h-10 items-center gap-1.5 pr-2 text-[14px] text-cat-muted">
+          <button
+            type="button"
+            onClick={deleteBand}
+            disabled={saving}
+            aria-live="polite"
+            className={`flex h-11 items-center gap-1.5 pr-2 text-[14px] ${armed === "band" ? "text-cat-ink underline underline-offset-4" : "text-cat-muted"}`}
+          >
             <TrashIcon size={16} />
-            Delete
+            {armed === "band" ? (totalClaims > 0 ? `Delete with ${totalClaims} claim${totalClaims === 1 ? "" : "s"}` : "Tap to delete") : "Delete"}
           </button>
         )}
         <span className="flex-1" />

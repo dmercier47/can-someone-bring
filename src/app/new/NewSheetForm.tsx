@@ -117,9 +117,9 @@ export default function NewSheetForm({ defaultName }: { defaultName: string }) {
         </label>
         <label className="block">
           <span className={ui.label}>
-            Partiful invite link <span className="font-normal text-muted">(optional)</span>
+            Invite link <span className="font-normal text-muted">(optional)</span>
           </span>
-          <input name="partifulUrl" type="url" inputMode="url" className={ui.input} placeholder="https://partiful.com/e/…" />
+          <input name="partifulUrl" type="url" inputMode="url" className={ui.input} placeholder="https://…" />
           <span className="mt-1.5 block text-[13px] text-muted">Adds an &ldquo;Invite&rdquo; button so guests can hop back. You can add it later.</span>
         </label>
 
