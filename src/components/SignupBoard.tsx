@@ -376,23 +376,38 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
             panel.kind === "claim"
               ? `Bring ${lowerFirst(panel.slot.name)}`
               : panel.kind === "done"
-                ? `Iconic. You're on ${panel.title}.`
+                ? "Iconic."
                 : "Bring something else"
           }
           sticker={panel.kind === "claim" ? (panel.slot.sticker ?? panel.category.sticker) : panel.kind === "done" ? panel.sticker : "plate"}
         >
           {panel.kind === "done" ? (
             <div className="pb-2">
-              <p className="text-[15px] text-muted">Your private link. Open it anywhere to undo.</p>
-              <CopyMyLinkButton
-                getUrl={() => editLinkUrl(location.origin, sheet.slug, myClaims.map((c) => tokens[c.id]))}
-              />
-              <p role="status" className="mt-3 text-center text-[14px] text-muted">
-                {panel.email === "sent" ? "It's in your inbox too." : panel.email === "linked" ? "Your link in your inbox has this too." : ""}
+              <p className="text-[17px] leading-snug">You&apos;re on {panel.title}.</p>
+              <p role="status" className="mt-1 text-[15px] text-muted empty:hidden">
+                {panel.email === "sending"
+                  ? "Emailing you a link to change it."
+                  : panel.email === "sent"
+                    ? "We emailed you a link to change it."
+                    : panel.email === "linked"
+                      ? "The link in your inbox covers this too."
+                      : ""}
               </p>
-              <button type="button" onClick={() => setPanel(null)} className="mt-1 h-12 w-full text-[16px] text-muted">
-                Done
-              </button>
+              {panel.email === "none" ? (
+                <>
+                  <CopyMyLinkButton
+                    label="Copy a link to change it"
+                    getUrl={() => editLinkUrl(location.origin, sheet.slug, myClaims.map((c) => tokens[c.id]))}
+                  />
+                  <button type="button" onClick={() => setPanel(null)} className="mt-1 h-12 w-full text-[16px] text-muted">
+                    Done
+                  </button>
+                </>
+              ) : (
+                <button type="button" autoFocus onClick={() => setPanel(null)} className={`${ui.pill} mt-5 w-full`}>
+                  Done
+                </button>
+              )}
             </div>
           ) : panel.kind === "claim" ? (
             <ClaimForm
@@ -591,7 +606,7 @@ function BottomSheet({
 const inputCls = ui.input;
 
 /** Copies this browser's private link for the sheet. Built synchronously in the tap so iOS allows the copy. */
-function CopyMyLinkButton({ getUrl, compact }: { getUrl: () => string; compact?: boolean }) {
+function CopyMyLinkButton({ getUrl, compact, label = "Copy my link" }: { getUrl: () => string; compact?: boolean; label?: string }) {
   const [copied, setCopied] = useState(false);
   useEffect(() => {
     if (!copied) return;
@@ -615,7 +630,7 @@ function CopyMyLinkButton({ getUrl, compact }: { getUrl: () => string; compact?:
       }
     >
       {!compact && (copied ? <CheckIcon size={18} /> : <LinkIcon size={18} />)}
-      {copied ? "Copied" : "Copy my link"}
+      {copied ? "Copied" : label}
     </button>
   );
 }
