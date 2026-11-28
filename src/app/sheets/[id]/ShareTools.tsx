@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CheckIcon, LinkIcon } from "@/components/icons";
+import { copyText } from "@/lib/clipboard";
 
 /**
  * One job: get the link into the Partiful invite. A single "Copy sign-up link" button, nothing else.
@@ -11,17 +12,7 @@ export default function ShareTools({ url }: { url: string }) {
   const [copied, setCopied] = useState(false);
 
   async function copy() {
-    try {
-      await navigator.clipboard.writeText(url);
-    } catch {
-      // Older browsers and non-secure dev origins: fall back to a temporary textarea.
-      const t = document.createElement("textarea");
-      t.value = url;
-      document.body.appendChild(t);
-      t.select();
-      document.execCommand("copy");
-      t.remove();
-    }
+    await copyText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
   }

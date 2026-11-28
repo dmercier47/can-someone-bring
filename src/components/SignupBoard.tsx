@@ -3,36 +3,28 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { categoryColor, takenCount, type Category, type CategoryColor, type Claim, type Sheet, type Slot } from "@/lib/types";
-import type { StickerKey } from "@/lib/stickers";
-import { addGuestItem, claimSlot, dropClaim as dropClaimAction } from "@/app/s/[slug]/actions";
+import { guessSticker, type StickerKey } from "@/lib/stickers";
+import { addGuestItem, claimSlot, dropClaim as dropClaimAction, sendClaimEmail } from "@/app/s/[slug]/actions";
 import Sticker from "./Sticker";
-import { CloseIcon, MinusIcon, PlusIcon } from "./icons";
+import { CheckIcon, CloseIcon, LinkIcon, MinusIcon, PlusIcon } from "./icons";
 import { ui } from "./ui";
 import { useVisualViewport } from "@/lib/useVisualViewport";
-
-const NAME_KEY = "csb:name";
-/** claimId → secret edit token, per sheet, kept on this device. */
-const mineKey = (slug: string) => `csb:mine:${slug}`;
-type MyTokens = Record<string, string>;
-
-function loadTokens(slug: string): MyTokens {
-  try {
-    return JSON.parse(localStorage.getItem(mineKey(slug)) ?? "{}") as MyTokens;
-  } catch {
-    return {};
-  }
-}
-
-function saveTokens(slug: string, tokens: MyTokens) {
-  try {
-    localStorage.setItem(mineKey(slug), JSON.stringify(tokens));
-  } catch {}
-}
+import { NAME_KEY, addTokens, loadEmail, loadTokens, removeToken, saveEmail, takeFlash, type MyTokens } from "@/lib/guest-storage";
+import { copyText } from "@/lib/clipboard";
+import { editLinkUrl } from "@/lib/edit-link";
+import { normalizeEmail, suggestEmail } from "@/lib/email";
 
 import { CARD_BG } from "@/lib/colors";
 const AVATAR_BG = [CARD_BG.pink, CARD_BG.yellow, CARD_BG.blue, CARD_BG.mint, CARD_BG.tomato];
 
-type Panel = { kind: "claim"; slot: Slot; category: Category } | { kind: "custom" } | null;
+type EmailState = "none" | "sending" | "sent" | "linked";
+type Panel =
+  | { kind: "claim"; slot: Slot; category: Category }
+  | { kind: "custom" }
+  | { kind: "done"; claimId: string; title: string; sticker: StickerKey; email: EmailState }
+  | null;
+
+type GuestData = { guestName: string; dietaryNote?: string; guestEmail?: string };
 
 function initial(name: string) {
   return name.trim().charAt(0).toUpperCase() || "?";
@@ -54,8 +46,10 @@ function words(s: string) {
     .filter((w) => w.length > 2 && !STOP.has(w));
 }
 
+// Mid-sentence item names: "Bring cheese or charcuterie", but keep acronyms like "IPA" or "QA olives" as typed.
 function lowerFirst(s: string) {
-  return s.charAt(0).toLowerCase() + s.slice(1);
+  const firstWord = s.split(/\s/, 1)[0];
+  return /[A-Z]/.test(firstWord.slice(1)) ? s : s.charAt(0).toLowerCase() + s.slice(1);
 }
 
 export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; when: string; dateLabel: string }) {
@@ -64,6 +58,7 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
   const [claims, setClaims] = useState<Claim[]>(sheet.claims);
   const [tokens, setTokens] = useState<MyTokens>({});
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
   const [panel, setPanel] = useState<Panel>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -78,7 +73,19 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
     try {
       setName(localStorage.getItem(NAME_KEY) ?? "");
     } catch {}
+    setEmail(loadEmail());
     setTokens(loadTokens(sheet.slug));
+
+    // Arrived through a private link: say so, or say the link was dead.
+    const restored = takeFlash(sheet.slug);
+    if (restored) {
+      const slots = sheet.categories.flatMap((c) => c.slots);
+      const labels = sheet.claims
+        .filter((c) => restored.includes(c.id))
+        .map((c) => lowerFirst(c.detail || slots.find((sl) => sl.id === c.slotId)?.name || "something"));
+      setToast(labels.length ? `Welcome back. You're on ${labels.join(", ")}.` : "That one's already off the list.");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sheet.slug]);
 
   // Pick up other guests' claims when someone comes back to the tab.
@@ -89,11 +96,6 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
   }, [router]);
 
   const mine = useMemo(() => Object.keys(tokens), [tokens]);
-
-  function setMyTokens(next: MyTokens) {
-    setTokens(next);
-    saveTokens(sheet.slug, next);
-  }
 
   useEffect(() => {
     if (!toast) return;
@@ -136,10 +138,27 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
     } catch {}
   }
 
+  function rememberEmail(e: string) {
+    setEmail(e);
+    saveEmail(e);
+  }
+
+  /** Show the confirmation now; the email goes out on the side and only updates the line under the button. */
+  function finishClaim(claimId: string, editToken: string, emailed: boolean, title: string, stickerKey: StickerKey) {
+    setPanel({ kind: "done", claimId, title, sticker: stickerKey, email: emailed ? "sending" : "none" });
+    if (!emailed) return;
+    const setEmailState = (email: EmailState) =>
+      setPanel((p) => (p?.kind === "done" && p.claimId === claimId ? { ...p, email } : p));
+    void sendClaimEmail(sheet.slug, claimId, editToken)
+      .then((r) => setEmailState(r.ok ? r.data.status : "none"))
+      .catch(() => setEmailState("none"));
+  }
+
   async function addClaim(
     slotId: string,
-    data: { guestName: string; detail?: string; dietaryNote?: string; quantity: number },
+    data: GuestData & { detail?: string; quantity: number },
     label: string,
+    stickerKey: StickerKey,
   ) {
     setBusy(true);
     const res = await claimSlot(sheet.slug, slotId, data);
@@ -150,12 +169,13 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
       router.refresh();
       return;
     }
-    const claim: Claim = { id: res.data.claimId, slotId, ...data };
+    const { guestEmail, ...shown } = data;
+    const claim: Claim = { id: res.data.claimId, slotId, ...shown };
     setClaims((cs) => [...cs, claim]);
-    setMyTokens({ ...tokens, [claim.id]: res.data.editToken });
+    setTokens(addTokens(sheet.slug, { [claim.id]: res.data.editToken }));
     rememberName(data.guestName);
-    setPanel(null);
-    setToast(`Iconic. You're on ${lowerFirst(label)}${data.quantity > 1 ? ` (${data.quantity})` : ""}.`);
+    rememberEmail(guestEmail ?? "");
+    finishClaim(claim.id, res.data.editToken, res.data.emailed, `${lowerFirst(label)}${data.quantity > 1 ? ` (${data.quantity})` : ""}`, stickerKey);
     router.refresh();
   }
 
@@ -170,14 +190,12 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
       setToast(res.error);
       return;
     }
-    const { [id]: _removed, ...rest } = tokens;
-    void _removed;
-    setMyTokens(rest);
+    setTokens(removeToken(sheet.slug, id));
     setToast("All good. It's back up for grabs.");
     router.refresh();
   }
 
-  async function addCustom(categoryId: string, itemName: string, data: { guestName: string; dietaryNote?: string }) {
+  async function addCustom(categoryId: string, itemName: string, data: GuestData) {
     setBusy(true);
     const res = await addGuestItem(sheet.slug, categoryId, itemName, data);
     setBusy(false);
@@ -187,11 +205,12 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
     }
     const slot: Slot = { id: res.data.slotId, name: itemName, quantity: 1, createdByGuest: true };
     setCategories((cats) => cats.map((c) => (c.id === categoryId ? { ...c, slots: [...c.slots, slot] } : c)));
-    setClaims((cs) => [...cs, { id: res.data.claimId, slotId: slot.id, quantity: 1, ...data }]);
-    setMyTokens({ ...tokens, [res.data.claimId]: res.data.editToken });
+    const { guestEmail, ...shown } = data;
+    setClaims((cs) => [...cs, { id: res.data.claimId, slotId: slot.id, quantity: 1, ...shown }]);
+    setTokens(addTokens(sheet.slug, { [res.data.claimId]: res.data.editToken }));
     rememberName(data.guestName);
-    setPanel(null);
-    setToast(`Iconic. You're on ${lowerFirst(itemName)}.`);
+    rememberEmail(guestEmail ?? "");
+    finishClaim(res.data.claimId, res.data.editToken, res.data.emailed, lowerFirst(itemName), guessSticker(itemName) ?? categories.find((c) => c.id === categoryId)?.sticker ?? "plate");
     router.refresh();
   }
 
@@ -322,10 +341,16 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
             ) : (
               <span className="flex-1 text-[15px]">Bring something else</span>
             )}
+            {myClaims.length > 0 && (
+              <CopyMyLinkButton
+                compact
+                getUrl={() => editLinkUrl(location.origin, sheet.slug, myClaims.map((c) => tokens[c.id]))}
+              />
+            )}
             {sheet.allowGuestItems && (
               <button
                 onClick={() => setPanel({ kind: "custom" })}
-                className="grid size-10 shrink-0 place-items-center rounded-xl bg-accent text-accent-ink active:scale-95"
+                className="grid size-11 shrink-0 place-items-center rounded-xl bg-accent text-accent-ink active:scale-95"
                 aria-label="Bring something else"
               >
                 <PlusIcon size={20} strokeWidth={2.2} />
@@ -347,23 +372,44 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
       {panel && (
         <BottomSheet
           onClose={() => setPanel(null)}
-          title={panel.kind === "claim" ? `Bring ${lowerFirst(panel.slot.name)}` : "Bring something else"}
-          sticker={panel.kind === "claim" ? (panel.slot.sticker ?? panel.category.sticker) : "plate"}
+          title={
+            panel.kind === "claim"
+              ? `Bring ${lowerFirst(panel.slot.name)}`
+              : panel.kind === "done"
+                ? `Iconic. You're on ${panel.title}.`
+                : "Bring something else"
+          }
+          sticker={panel.kind === "claim" ? (panel.slot.sticker ?? panel.category.sticker) : panel.kind === "done" ? panel.sticker : "plate"}
         >
-          {panel.kind === "claim" ? (
+          {panel.kind === "done" ? (
+            <div className="pb-2">
+              <p className="text-[15px] text-muted">Your private link. Open it anywhere to undo.</p>
+              <CopyMyLinkButton
+                getUrl={() => editLinkUrl(location.origin, sheet.slug, myClaims.map((c) => tokens[c.id]))}
+              />
+              <p role="status" className="mt-3 text-center text-[14px] text-muted">
+                {panel.email === "sent" ? "It's in your inbox too." : panel.email === "linked" ? "Your link in your inbox has this too." : ""}
+              </p>
+              <button type="button" onClick={() => setPanel(null)} className="mt-1 h-12 w-full text-[16px] text-muted">
+                Done
+              </button>
+            </div>
+          ) : panel.kind === "claim" ? (
             <ClaimForm
               busy={busy}
               key={panel.slot.id}
               slot={panel.slot}
               open={openCount(panel.slot)}
               defaultName={name}
-              onSubmit={(d) => addClaim(panel.slot.id, d, d.detail || panel.slot.name)}
+              defaultEmail={email}
+              onSubmit={(d) => addClaim(panel.slot.id, d, d.detail || panel.slot.name, panel.slot.sticker ?? panel.category.sticker)}
             />
           ) : (
             <CustomForm
               busy={busy}
               categories={categories}
               defaultName={name}
+              defaultEmail={email}
               findSimilar={findSimilar}
               onSubmit={(catId, item, d) => addCustom(catId, item, d)}
             />
@@ -413,7 +459,7 @@ function SlotRow({
       {myClaim ? (
         <span className="flex shrink-0 items-center gap-2">
           <span className="text-[13px] text-cat-muted">{myClaim.quantity > 1 ? `You ×${myClaim.quantity}` : "You"}</span>
-          <button onClick={() => onDrop(myClaim.id)} className="h-9 rounded-full border border-cat-hair px-3.5 text-[13px]">
+          <button onClick={() => onDrop(myClaim.id)} className="h-11 rounded-full border border-cat-hair px-3.5 text-[13px]">
             Undo
           </button>
         </span>
@@ -527,6 +573,74 @@ function BottomSheet({
 
 const inputCls = ui.input;
 
+/** Copies this browser's private link for the sheet. Built synchronously in the tap so iOS allows the copy. */
+function CopyMyLinkButton({ getUrl, compact }: { getUrl: () => string; compact?: boolean }) {
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    if (!copied) return;
+    const t = setTimeout(() => setCopied(false), 2500);
+    return () => clearTimeout(t);
+  }, [copied]);
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        void copyText(getUrl());
+        setCopied(true);
+      }}
+      aria-live="polite"
+      autoFocus={!compact}
+      className={
+        compact
+          ? "h-11 min-w-[7.5rem] shrink-0 rounded-full border border-pill-ink/25 px-4 text-[14px] text-pill-ink active:scale-95"
+          : `${ui.pill} mt-5 w-full`
+      }
+    >
+      {!compact && (copied ? <CheckIcon size={18} /> : <LinkIcon size={18} />)}
+      {copied ? "Copied" : "Copy my link"}
+    </button>
+  );
+}
+
+function EmailField({ value, onChange, attempted }: { value: string; onChange: (s: string) => void; attempted: boolean }) {
+  const [touched, setTouched] = useState(false);
+  const blank = !value.trim();
+  const bad = !blank && !normalizeEmail(value);
+  const hint = !bad && !blank ? suggestEmail(value) : null;
+  return (
+    <div>
+      <label className="block">
+        <span className={ui.label}>Email · for a link to change this</span>
+        <input
+          className={inputCls}
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          autoCapitalize="off"
+          spellCheck={false}
+          enterKeyHint="done"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={() => setTouched(true)}
+          placeholder="you@email.com"
+        />
+      </label>
+      <p className="mt-1.5 text-[13px] text-faint">Only used for this sheet. No account.</p>
+      <p className="text-[13px] text-accent" aria-live="polite">
+        {bad && (touched || attempted) ? "That email looks off." : ""}
+      </p>
+      {hint && (
+        <button type="button" onClick={() => onChange(hint)} className="flex h-11 items-center text-[14px] text-accent">
+          Did you mean {hint}?
+        </button>
+      )}
+    </div>
+  );
+}
+
+const emailBad = (v: string) => Boolean(v.trim()) && !normalizeEmail(v);
+
 function NameAndDiet({
   name,
   setName,
@@ -590,6 +704,7 @@ function ClaimForm({
   slot,
   open,
   defaultName,
+  defaultEmail,
   busy,
   onSubmit,
 }: {
@@ -597,21 +712,32 @@ function ClaimForm({
   /** Spots still open on this item; guests can take more than one. */
   open: number;
   defaultName: string;
+  defaultEmail: string;
   busy: boolean;
-  onSubmit: (d: { guestName: string; detail?: string; dietaryNote?: string; quantity: number }) => void;
+  onSubmit: (d: GuestData & { detail?: string; quantity: number }) => void;
 }) {
   const [count, setCount] = useState(1);
   const [name, setName] = useState(defaultName);
   const [detail, setDetail] = useState("");
   const [diet, setDiet] = useState("");
+  const [email, setEmail] = useState(defaultEmail);
+  const [attempted, setAttempted] = useState(false);
 
   return (
     <form
+      noValidate
       className="space-y-4"
       onSubmit={(e) => {
         e.preventDefault();
         if (!name.trim()) return;
-        onSubmit({ guestName: name.trim(), detail: detail.trim() || undefined, dietaryNote: diet.trim() || undefined, quantity: count });
+        if (emailBad(email)) return setAttempted(true);
+        onSubmit({
+          guestName: name.trim(),
+          detail: detail.trim() || undefined,
+          dietaryNote: diet.trim() || undefined,
+          guestEmail: email.trim() || undefined,
+          quantity: count,
+        });
       }}
     >
       {open > 1 && (
@@ -656,7 +782,8 @@ function ClaimForm({
         />
       </label>
       <NameAndDiet name={name} setName={setName} diet={diet} setDiet={setDiet} />
-      <SubmitButton busy={busy} disabled={!name.trim()}>
+      <EmailField value={email} onChange={setEmail} attempted={attempted} />
+      <SubmitButton busy={busy} disabled={!name.trim() || emailBad(email)}>
         {count > 1 ? `I'm bringing ${count}` : "I'm bringing it"}
       </SubmitButton>
     </form>
@@ -666,29 +793,35 @@ function ClaimForm({
 function CustomForm({
   categories,
   defaultName,
+  defaultEmail,
   busy,
   findSimilar,
   onSubmit,
 }: {
   categories: Category[];
   defaultName: string;
+  defaultEmail: string;
   busy: boolean;
   findSimilar: (s: string) => string | null;
-  onSubmit: (categoryId: string, item: string, d: { guestName: string; dietaryNote?: string }) => void;
+  onSubmit: (categoryId: string, item: string, d: GuestData) => void;
 }) {
   const [item, setItem] = useState("");
   const [catId, setCatId] = useState(categories[0]?.id ?? "");
   const [name, setName] = useState(defaultName);
   const [diet, setDiet] = useState("");
+  const [email, setEmail] = useState(defaultEmail);
+  const [attempted, setAttempted] = useState(false);
   const similar = item.trim().length > 2 ? findSimilar(item) : null;
 
   return (
     <form
+      noValidate
       className="space-y-4"
       onSubmit={(e) => {
         e.preventDefault();
         if (!item.trim() || !name.trim()) return;
-        onSubmit(catId, item.trim(), { guestName: name.trim(), dietaryNote: diet.trim() || undefined });
+        if (emailBad(email)) return setAttempted(true);
+        onSubmit(catId, item.trim(), { guestName: name.trim(), dietaryNote: diet.trim() || undefined, guestEmail: email.trim() || undefined });
       }}
     >
       <label className="block">
@@ -723,7 +856,8 @@ function CustomForm({
         </div>
       </fieldset>
       <NameAndDiet name={name} setName={setName} diet={diet} setDiet={setDiet} />
-      <SubmitButton busy={busy} disabled={!item.trim() || !name.trim()}>Add it</SubmitButton>
+      <EmailField value={email} onChange={setEmail} attempted={attempted} />
+      <SubmitButton busy={busy} disabled={!item.trim() || !name.trim() || emailBad(email)}>Add it</SubmitButton>
     </form>
   );
 }
