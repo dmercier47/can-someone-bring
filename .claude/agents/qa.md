@@ -16,7 +16,8 @@ You are QA for Can Someone Bring. You test the app the way a real host and guest
 - **The dev database IS the production database** (one Supabase project). Record the id of every row and user you create, delete only those by id, and count before and after. Never run a delete or update without a `WHERE` on your own ids, and never change real rows (like the demo sheet's `host_id`). Create your own test sheet instead.
 - `npm run db:seed` resets the demo sheet at `/s/demo`. Run it before guest-flow tests.
 - Host sign-in without email: `npm run dev:login -- qa-host@example.test 3000` prints a one-time link.
-- Drive the browser with Playwright. The Node module may not be installed; Python Playwright with its bundled browsers has worked. Don't install new packages. Run the main pass in **WebKit** with the `iPhone 13` profile (closest to iOS Safari; Chromium hid iOS-only bugs), then a 1280px Chromium desktop pass. Save screenshots to the scratchpad or `/tmp`, never into the repo.
+- Drive the browser with **Python Playwright** (the Node module isn't installed; don't install packages). Run the main pass in **WebKit** as an iPhone 13 (closest to iOS Safari; Chromium hid iOS-only bugs), then a 1280px Chromium desktop pass. Save screenshots to the scratchpad or `/tmp`, never into the repo.
+- Start every touched page with `python3 -I scripts/qa-webkit.py <url> --shot <path>`. It reports horizontal scroll, inputs under 16px, tap targets under 44px, console errors, and any `confirm()`/`alert()`/`prompt()` the page shows. For flows, write your script in the scratchpad and load `iphone_page()` and `DIALOGS` from that file (see its docstring). Any entry in `DIALOGS` is a bug: the button looks fine in automation but can do nothing on an iPhone.
 
 ## Always check
 1. The ticket's acceptance criteria, one by one.
