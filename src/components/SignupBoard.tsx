@@ -21,6 +21,7 @@ type EmailState = "none" | "sending" | "sent" | "linked";
 type Panel =
   | { kind: "claim"; slot: Slot; category: Category }
   | { kind: "custom" }
+  | { kind: "guests" }
   | { kind: "done"; claimId: string; title: string; sticker: StickerKey; email: EmailState }
   | null;
 
@@ -271,7 +272,11 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
           <span className="text-[14px] text-muted">still needed</span>
         </p>
         {guests.length > 0 && (
-          <div className="flex items-center gap-2 text-[13px] text-muted">
+          <button
+            type="button"
+            onClick={() => setPanel({ kind: "guests" })}
+            className="-mr-2 flex min-h-11 items-center gap-2 rounded-xl px-2 text-[13px] text-muted active:bg-surface"
+          >
             <div className="flex">
               {guests.slice(0, 4).map((g) => (
                 <span
@@ -284,7 +289,7 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
             </div>
             {/* Who's bringing something, not who's attending: RSVPs live in Partiful. */}
             {guests.length} bringing
-          </div>
+          </button>
         )}
       </div>
 
@@ -338,9 +343,12 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
                 <span className="block text-[12px] text-pill-ink/60">You&apos;re bringing</span>
                 <span className="block truncate text-[15px]">{myClaims.map(claimLabel).join(", ")}</span>
               </p>
-            ) : (
-              <span className="flex-1 text-[15px]">Bring something else</span>
-            )}
+            ) : sheet.allowGuestItems ? (
+              // The whole bar opens the add form, not just the plus.
+              <button type="button" onClick={() => setPanel({ kind: "custom" })} className="h-11 flex-1 text-left text-[15px]">
+                Bring something else
+              </button>
+            ) : null}
             {myClaims.length > 0 && (
               <CopyMyLinkButton
                 compact
@@ -377,11 +385,31 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
               ? `Bring ${lowerFirst(panel.slot.name)}`
               : panel.kind === "done"
                 ? "Iconic."
-                : "Bring something else"
+                : panel.kind === "guests"
+                  ? "Who's bringing what"
+                  : "Bring something else"
           }
-          sticker={panel.kind === "claim" ? (panel.slot.sticker ?? panel.category.sticker) : panel.kind === "done" ? panel.sticker : "plate"}
+          sticker={panel.kind === "claim" ? (panel.slot.sticker ?? panel.category.sticker) : panel.kind === "done" ? panel.sticker : panel.kind === "guests" ? "glasses" : "plate"}
         >
-          {panel.kind === "done" ? (
+          {panel.kind === "guests" ? (
+            <ul className="pb-2">
+              {guests.map((g) => {
+                const theirs = claims.filter((c) => c.guestName === g);
+                const isMe = theirs.some((c) => mine.includes(c.id));
+                return (
+                  <li key={g} className="flex items-start gap-3 border-t border-hair py-3 first:border-t-0">
+                    <span className={`grid size-8 shrink-0 place-items-center rounded-full text-[12px] text-cat-ink ${avatarBg(g)}`}>{initial(g)}</span>
+                    <p className="min-w-0 flex-1 leading-snug">
+                      <span className="block text-[16px]">{isMe ? `${g} (you)` : g}</span>
+                      <span className="block text-[14px] text-muted">
+                        {theirs.map((c) => `${claimLabel(c)}${c.quantity > 1 ? ` ×${c.quantity}` : ""}`).join(", ")}
+                      </span>
+                    </p>
+                  </li>
+                );
+              })}
+            </ul>
+          ) : panel.kind === "done" ? (
             <div className="pb-2">
               <p className="text-[17px] leading-snug">You&apos;re on {panel.title}.</p>
               <p role="status" className="mt-1 text-[15px] text-muted empty:hidden">

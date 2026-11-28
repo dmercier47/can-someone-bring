@@ -26,9 +26,14 @@ export default function PartyMenu({ sheetId, guestUrl, details }: { sheetId: str
     };
   }, [open]);
 
+  // Second tap confirms (no browser pop-up: iOS can silently block those).
+  const [armDelete, setArmDelete] = useState(false);
+  useEffect(() => {
+    if (!open) setArmDelete(false);
+  }, [open]);
   async function confirmDelete() {
+    if (!armDelete) return setArmDelete(true);
     setOpen(false);
-    if (!confirm("Delete this party and everyone's claims? This can't be undone.")) return;
     await deleteSheet(sheetId);
   }
 
@@ -64,7 +69,7 @@ export default function PartyMenu({ sheetId, guestUrl, details }: { sheetId: str
           </a>
           <div className="my-1.5 h-px bg-hair" />
           <button role="menuitem" className={`${item} text-accent`} onClick={confirmDelete}>
-            <TrashIcon /> Delete party
+            <TrashIcon /> {armDelete ? "Tap again to delete for good" : "Delete party"}
           </button>
         </div>
       )}
@@ -119,14 +124,14 @@ function DetailsSheet({ sheetId, initial, onClose }: { sheetId: string; initial:
         <Field label="Where" optional>
           <input className={ui.input} value={d.location} onChange={(e) => set("location", e.target.value)} maxLength={120} />
         </Field>
-        <Field label="Partiful invite link" optional>
+        <Field label="Invite link" optional>
           <input
             type="url"
             inputMode="url"
             className={ui.input}
             value={d.partifulUrl}
             onChange={(e) => set("partifulUrl", e.target.value)}
-            placeholder="https://partiful.com/e/…"
+            placeholder="https://…"
           />
         </Field>
         <Field label="Note to guests" optional>
