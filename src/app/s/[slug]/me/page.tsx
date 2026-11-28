@@ -37,7 +37,7 @@ export default async function MePage({ params, searchParams }: Props) {
       <RestoreClaims slug={slug} mine={mine} supplied={supplied} />
       <noscript>
         <a href={`/s/${slug}`} className={`${ui.pillOutline} mt-6`}>
-          Open the sheet
+          Open the party
         </a>
       </noscript>
     </main>

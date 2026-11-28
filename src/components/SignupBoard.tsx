@@ -419,16 +419,16 @@ export default function SignupBoard({ sheet, when, dateLabel }: { sheet: Sheet; 
                     ? "We emailed you a link to change it."
                     : panel.email === "linked"
                       ? "The link in your inbox covers this too."
-                      : ""}
+                      : "Save your link to change or drop this later."}
               </p>
               {panel.email === "none" ? (
                 <>
                   <CopyMyLinkButton
-                    label="Copy a link to change it"
+                    label="Copy your link"
                     getUrl={() => editLinkUrl(location.origin, sheet.slug, myClaims.map((c) => tokens[c.id]))}
                   />
                   <button type="button" onClick={() => setPanel(null)} className="mt-1 h-12 w-full text-[16px] text-muted">
-                    Done
+                    Back to the list
                   </button>
                 </>
               ) : (

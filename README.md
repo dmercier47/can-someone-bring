@@ -1,10 +1,10 @@
 # can someone bring?
 
-**The signup sheet for dinner parties and house parties.** Hosts make a list of what's needed, paste the link into their [Partiful](https://partiful.com) invite, and guests claim what they're bringing in two taps, with no app and no account.
+**Who's bringing what, for dinner parties and house parties.** Hosts make a list of what's needed, paste the link into their [Partiful](https://partiful.com) invite, and guests claim what they're bringing in two taps, with no app and no account.
 
 > _Jules's hosting **Sunday dinner** at 7pm. Can someone bring **tinned fish** 🥫, **natural wine** 🍷 or **dessert** 🍰?_
 
-**Live:** [can-someone-bring.vercel.app](https://can-someone-bring.vercel.app) · **Try the guest view:** [demo sheet](https://can-someone-bring.vercel.app/s/demo) (best on your phone)
+**Live:** [can-someone-bring.vercel.app](https://can-someone-bring.vercel.app) · **Try the guest view:** [demo party](https://can-someone-bring.vercel.app/s/demo) (best on your phone)
 
 <p align="center">
   <img src="docs/guest.jpg" width="250" alt="Guest signup page: a sentence header listing what's still needed, a big '11 still needed' count, and colorful stacked category cards" />
@@ -19,7 +19,7 @@
 Signup Genius is built for PTAs and volunteer shifts; Partiful nails invites and RSVPs but not "who's bringing what." This sits in between, designed around how people actually host:
 
 1. Draft the Partiful event
-2. Make a sheet here (templates for Dinner party, Park hang, House party, Pregame)
+2. Make a party here (templates for Dinner party, Park hang, House party, Pregame)
 3. Paste the link into the Partiful description, then send the invite
 4. Guests tap through, claim a dish, done
 

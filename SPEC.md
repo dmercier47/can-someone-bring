@@ -1,12 +1,12 @@
 # Can Someone Bring — Product Spec
 
-> A signup sheet for dinner parties and house parties. Hosts list what's needed; guests claim it in two taps. Built to pair with Partiful.
+> Who's bringing what, for dinner parties and house parties. Hosts list what's needed; guests claim it in two taps. Built to pair with Partiful.
 
 ## The core flow
 
 1. Host drafts a Partiful event.
-2. Host creates a **Can Someone Bring** sheet (title, date, items needed).
-3. Host copies the sheet link and pastes it into the Partiful event description.
+2. Host creates a **Can Someone Bring** party (title, date, items needed).
+3. Host copies the party's sign-up link and pastes it into the Partiful event description.
 4. Host sends the Partiful invite.
 5. Guests tap the link from Partiful / iMessage, claim something, done.
 

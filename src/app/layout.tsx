@@ -7,7 +7,7 @@ const display = Hedvig_Letters_Serif({ variable: "--font-display-face", subsets:
 
 export const metadata: Metadata = {
   title: "Can Someone Bring",
-  description: "The signup sheet for dinner parties and house parties.",
+  description: "Who's bringing what to your party. Drop the link in your Partiful.",
 };
 
 export const viewport: Viewport = {

@@ -33,7 +33,7 @@ function clean(s: unknown, max: number): string | undefined {
 
 function friendly(message: string): string {
   if (message.includes("slot_full")) return "Someone beat you to it. Pick another, or bring fewer?";
-  if (message.includes("not_found")) return "That item isn't on this sheet anymore.";
+  if (message.includes("not_found")) return "That item isn't on the list anymore.";
   return "Something went wrong. Try again?";
 }
 
@@ -43,7 +43,7 @@ export async function claimSlot(
   input: GuestInput,
 ): Promise<ActionResult<{ claimId: string; editToken: string; emailed: boolean }>> {
   const guestName = clean(input.guestName, 60);
-  if (!SLUG.test(slug) || !UUID.test(slotId)) return { ok: false, error: "That item isn't on this sheet anymore." };
+  if (!SLUG.test(slug) || !UUID.test(slotId)) return { ok: false, error: "That item isn't on the list anymore." };
   if (!guestName) return { ok: false, error: "Add your name so the host knows who's bringing it." };
   const count = Number.isInteger(input.quantity) ? (input.quantity as number) : 1;
   if (count < 1 || count > 50) return { ok: false, error: "Pick how many you're bringing." };
@@ -75,7 +75,7 @@ export async function addGuestItem(
 ): Promise<ActionResult<{ slotId: string; claimId: string; editToken: string; emailed: boolean }>> {
   const guestName = clean(input.guestName, 60);
   const name = clean(itemName, 80);
-  if (!SLUG.test(slug) || !UUID.test(categoryId)) return { ok: false, error: "That category isn't on this sheet." };
+  if (!SLUG.test(slug) || !UUID.test(categoryId)) return { ok: false, error: "That category isn't on the list anymore." };
   if (!name) return { ok: false, error: "What are you bringing?" };
   if (!guestName) return { ok: false, error: "Add your name so the host knows who's bringing it." };
   const email = parseEmail(input.guestEmail);

@@ -55,9 +55,9 @@ export async function createSheet(_: NewSheetState, form: FormData): Promise<New
       .select("id")
       .single();
     if (data) sheetId = data.id;
-    else if (error?.code !== "23505") return { error: "Couldn't create the sheet. Try again?" };
+    else if (error?.code !== "23505") return { error: "Couldn't create the party. Try again?" };
   }
-  if (!sheetId) return { error: "Couldn't create the sheet. Try again?" };
+  if (!sheetId) return { error: "Couldn't create the party. Try again?" };
 
   const categories = template.categories.map((c, i) => ({
     id: crypto.randomUUID(),
@@ -81,7 +81,7 @@ export async function createSheet(_: NewSheetState, form: FormData): Promise<New
   const sl = cat.error ? cat : await supabase.from("slots").insert(slots);
   if (cat.error || sl.error) {
     await supabase.from("sheets").delete().eq("id", sheetId);
-    return { error: "Couldn't create the sheet. Try again?" };
+    return { error: "Couldn't create the party. Try again?" };
   }
 
   // Remember the host's name for next time.
