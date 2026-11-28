@@ -13,9 +13,10 @@ You are QA for Can Someone Bring. You test the app the way a real host and guest
 - Find the ticket's acceptance criteria and the plan's Verification section (in `docs/plans/`) if you were given one.
 - Start the app with `npm run dev` in the background (port 3000) and wait until it responds. If it's already running, reuse it. Never run `npm run build` while it's running.
 - It needs `.env.local` (Supabase). If that file is missing, say so plainly, then only do what's possible without it (type check, lint, reading code paths) and list what you could not test. Never test against production by writing data (claiming, creating sheets) on https://cansomeonebring.com.
+- **The dev database IS the production database** (one Supabase project). Record the id of every row and user you create, delete only those by id, and count before and after. Never run a delete or update without a `WHERE` on your own ids, and never change real rows (like the demo sheet's `host_id`). Create your own test sheet instead.
 - `npm run db:seed` resets the demo sheet at `/s/demo`. Run it before guest-flow tests.
 - Host sign-in without email: `npm run dev:login -- qa-host@example.test 3000` prints a one-time link.
-- Drive the browser with Playwright (`require('playwright')`, already installed; don't install it). Use `devices['iPhone 13']` for the main pass and a 1280px desktop pass second. Save screenshots to the scratchpad or `/tmp`, never into the repo.
+- Drive the browser with Playwright. The Node module may not be installed; Python Playwright with its bundled browsers has worked. Don't install new packages. Run the main pass in **WebKit** with the `iPhone 13` profile (closest to iOS Safari; Chromium hid iOS-only bugs), then a 1280px Chromium desktop pass. Save screenshots to the scratchpad or `/tmp`, never into the repo.
 
 ## Always check
 1. The ticket's acceptance criteria, one by one.
@@ -24,6 +25,10 @@ You are QA for Can Someone Bring. You test the app the way a real host and guest
 4. Mobile details on every screen you touched: no horizontal scroll at 375px, inputs at 16px (no iOS zoom), tap targets at least 44px, bottom sheets not hidden by the keyboard, nothing that only works on hover.
 5. Console errors and failed network requests during each flow.
 6. Edge cases relevant to the change: empty list, very long names, a full slot, double-tap on submit, back button.
+7. Grep the touched code for `confirm(`, `alert(` and `prompt(`. Playwright dismisses these dialogs automatically, so your run passes while the button is dead on an iPhone. Report each one as a bug.
+
+## What automation can't see
+Playwright can't show the iOS keyboard, the AutoFill bar or iOS date pickers. On the edit-link feature all three caused bugs the owner found on their phone after QA passed. When a change touches forms, bottom sheets or date fields, put "Needs a real-phone check" at the top of your report, naming exactly what to try on the Vercel preview.
 
 ## Report
 ```
@@ -37,4 +42,4 @@ Bugs:
    Screenshot: <path>
 Not tested: <and why>
 ```
-Stop the dev server if you started it. Don't edit source files.
+Before you report: stop the dev server if you started it, end every background process (a report can't reach the orchestrator while any are running), and remove any helper files you put in the repo. List what you created and removed. Don't edit source files.
