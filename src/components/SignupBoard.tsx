@@ -533,6 +533,9 @@ function BottomSheet({
       style={visible ? { top: visible.top, height: visible.height } : undefined}
     >
       <div className="animate-fade-in absolute inset-0 bg-black/60" onClick={onClose} aria-hidden />
+      {/* iOS draws the AutoFill bar and Safari's address pill see-through below the visible area.
+          Fill that strip with the sheet color so the page doesn't show through between sheet and keyboard. */}
+      {visible?.keyboardOpen && <div className="absolute inset-x-0 top-full h-[100lvh] bg-bg" aria-hidden />}
       <div
         ref={ref}
         role="dialog"
@@ -543,7 +546,7 @@ function BottomSheet({
           // Wait for the keyboard to start opening before scrolling.
           setTimeout(() => target.scrollIntoView({ block: "nearest" }), 300);
         }}
-        className={`animate-sheet-up relative w-full max-w-xl overflow-y-auto overscroll-contain rounded-t-[24px] bg-bg px-5 pt-3 shadow-2xl sm:rounded-[24px] sm:pb-6 ${
+        className={`animate-sheet-up relative w-full max-w-xl overflow-y-auto overscroll-contain rounded-t-[24px] bg-bg px-5 pt-3 shadow-2xl sm:rounded-[24px] sm:pb-6 [&_input]:scroll-mb-6 ${
           visible?.keyboardOpen ? "pb-4" : "pb-safe"
         }`}
         style={{ maxHeight: visible ? visible.height - 12 : "90dvh" }}
@@ -611,7 +614,7 @@ function EmailField({ value, onChange, attempted }: { value: string; onChange: (
   return (
     <div>
       <label className="block">
-        <span className={ui.label}>Email · for a link to change this</span>
+        <span className={ui.label}>Email (optional)</span>
         <input
           className={inputCls}
           type="email"
@@ -626,7 +629,7 @@ function EmailField({ value, onChange, attempted }: { value: string; onChange: (
           placeholder="you@email.com"
         />
       </label>
-      <p className="mt-1.5 text-[13px] text-faint">Only used for this sheet. No account.</p>
+      <p className="mt-1.5 text-[13px] text-faint">We&apos;ll send a link to change this later. No account.</p>
       <p className="text-[13px] text-accent" aria-live="polite">
         {bad && (touched || attempted) ? "That email looks off." : ""}
       </p>
