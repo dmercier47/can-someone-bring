@@ -133,3 +133,62 @@ function mapSheet(data: SheetRow): Sheet {
       })),
   };
 }
+
+type ClaimPair = { claim_id: string; edit_token: string };
+
+function toMine(rows: ClaimPair[] | null): Record<string, string> {
+  return Object.fromEntries((rows ?? []).map((r) => [r.claim_id, r.edit_token]));
+}
+
+/** Claims on this sheet whose edit tokens were supplied. Empty on any error. */
+export async function resolveEditTokens(slug: string, tokens: string[]): Promise<Record<string, string>> {
+  if (!tokens.length) return {};
+  const { data, error } = await supabaseAdmin().rpc("resolve_edit_tokens", { p_slug: slug, p_tokens: tokens });
+  return error ? {} : toMine(data as ClaimPair[] | null);
+}
+
+/** Every current claim on this sheet saved under the guest link's email. Empty on any error. */
+export async function resolveGuestLink(slug: string, token: string | null): Promise<Record<string, string>> {
+  if (!token) return {};
+  const { data, error } = await supabaseAdmin().rpc("resolve_guest_link", { p_slug: slug, p_token: token });
+  return error ? {} : toMine(data as ClaimPair[] | null);
+}
+
+export type GuestLinkResult =
+  | { status: "send"; linkId: string; linkToken: string; guestEmail: string; title: string; hostName: string; startsAt: string; timeZone: string }
+  | { status: "linked" | "none" };
+
+/** Decide whether this claim's guest link email should go out (reserves the one send). */
+export async function claimGuestLink(slug: string, claimId: string, editToken: string): Promise<GuestLinkResult> {
+  const { data, error } = await supabaseAdmin()
+    .rpc("claim_guest_link", { p_slug: slug, p_claim_id: claimId, p_edit_token: editToken })
+    .single<{
+      status: string;
+      link_id: string | null;
+      link_token: string | null;
+      guest_email: string | null;
+      sheet_title: string | null;
+      host_name: string | null;
+      starts_at: string | null;
+      time_zone: string | null;
+    }>();
+  if (error || !data) return { status: "none" };
+  if (data.status === "linked") return { status: "linked" };
+  if (data.status !== "send" || !data.link_id || !data.link_token || !data.guest_email || !data.sheet_title || !data.host_name || !data.starts_at || !data.time_zone) {
+    return { status: "none" };
+  }
+  return {
+    status: "send",
+    linkId: data.link_id,
+    linkToken: data.link_token,
+    guestEmail: data.guest_email,
+    title: data.sheet_title,
+    hostName: data.host_name,
+    startsAt: data.starts_at,
+    timeZone: data.time_zone,
+  };
+}
+
+export async function markGuestLinkSent(linkId: string): Promise<void> {
+  await supabaseAdmin().rpc("mark_guest_link_sent", { p_link_id: linkId });
+}
